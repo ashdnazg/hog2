@@ -13,12 +13,12 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * HOG is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with HOG; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
@@ -30,6 +30,10 @@
 
 #ifdef __APPLE__
 #include "TargetConditionals.h"
+#endif
+
+#ifdef _WIN32
+#include <windows.h>
 #endif
 
 #ifdef NO_OPENGL
@@ -51,6 +55,7 @@
 #else
 
 #include <GL/gl.h>
+#include <GL/glext.h>
 #include <GL/glu.h>
 #include <GL/glut.h>
 #endif
@@ -92,10 +97,10 @@ public:
 	recVec GetNormal(recVec v)
 	{
 		recVec n;
-			
+
 		v.normalise();
 		this->normalise();
-			
+
 		n.x = this->y * v.z - this->z * v.y;
 		n.y = this->z * v.x - this->x * v.z;
 		n.z = this->x * v.y - this->y * v.x;
@@ -147,7 +152,7 @@ public:
 	point3d() {}
 	point3d(GLfloat a, GLfloat b, GLfloat c) :x(a), y(b), z(c) {}
 	GLfloat x, y, z;
-	
+
 	point3d operator+(const point3d &v) const
 	{ point3d p(*this); p+=v; return p; }
 	point3d operator-(const point3d &v) const
@@ -181,7 +186,7 @@ public:
  */
 recColor getColor(GLfloat v, GLfloat vmin, GLfloat vmax, int type);
 
-/** Draw a pyramid with the tip at the given location, given height, and 
+/** Draw a pyramid with the tip at the given location, given height, and
 * width from center to edge as width.
 */
 void DrawPyramid(GLfloat x, GLfloat y, GLfloat z, GLfloat height, GLfloat width);

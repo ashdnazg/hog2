@@ -7,6 +7,7 @@
 //
 
 #include <stdio.h>
+#include <time.h>
 #include "Airplane.h"
 
 bool operator==(const airplaneState &s1, const airplaneState &s2)
@@ -36,7 +37,7 @@ AirplaneEnvironment::AirplaneEnvironment()
 			steps = random()%10;
 		}
 	}
-	
+
 	for (int y = 1; y <= length; y++)
 	{
 		value = GetGround(0, y-1);
@@ -91,8 +92,8 @@ AirplaneEnvironment::AirplaneEnvironment()
 			SetGround(x, y, (255*tmp[x+y*(length+1)])/maxVal);
 		}
 	}
-	
-	
+
+
 	// build normals
 	for (int y = 0; y < length; y++)
 	{
@@ -127,12 +128,12 @@ AirplaneEnvironment::AirplaneEnvironment()
 			GetNormal(x, y).normalise();
 		}
 	}
-	
 
-	
+
+
 	//SetGround(x, y, (random()%60)-30+255*(sin(0.01*cos(x*y+y^2+3))+sin(0.04*sin(x+y))+2.0)/4.0);
 	//SetGround(x, y, random()%255);
-	
+
 //	for (int y = 0; y <= length; y++)
 //	{
 //		for (int x = 0; x <= width; x++)
@@ -226,7 +227,7 @@ void AirplaneEnvironment::GetActions(const airplaneState &nodeID, std::vector<ai
 		actions.push_back(airplaneAction(0, 0, -1));
 	if (nodeID.height < 20)
 		actions.push_back(airplaneAction(0, 0, +1));
-	
+
 	// each type of turn
 	actions.push_back(airplaneAction(k45, 0, 0));
 	actions.push_back(airplaneAction(-k45, 0, 0));
@@ -273,7 +274,7 @@ void AirplaneEnvironment::ApplyAction(airplaneState &s, airplaneAction dir) cons
 		s.x += offset[s.heading][0];
 		s.y += offset[s.heading][1];
 	}
-	
+
 }
 
 void AirplaneEnvironment::UndoAction(airplaneState &s, airplaneAction dir) const
@@ -335,10 +336,10 @@ void AirplaneEnvironment::OpenGLDraw() const
 		for (int x = 0; x <= width; x++)
 		{
 			recColor c;
-			
+
 			recVec a = GetCoordinate(x, y, std::max((int)GetGround(x, y), 20));
 			recVec b = GetCoordinate(x, y+1, std::max((int)GetGround(x, y+1), 20));
-			
+
 			//DoNormal(b-a, d-a);
 
 			if (GetGround(x, y) <= 20)
@@ -390,7 +391,7 @@ void AirplaneEnvironment::OpenGLDraw(const airplaneState &l) const
 	glRotatef(360*l.heading/8.0, 0, 0, 1);
 	DrawCylinder(0, 0, 0, 0, 0.01/5.0, 0.01);
 	glPopMatrix();
-	
+
 	//DrawCylinder(l.x, l.y, l.height, 0, 0.001, 0.01);
 }
 
@@ -401,7 +402,7 @@ void AirplaneEnvironment::OpenGLDraw(const airplaneState& o, const airplaneState
 		GetColor(r, g, b, t);
 		glColor3f(r, g, b);
 	}
-	
+
 	GLfloat x1 = (o.x-40.0)/40.0;
 	GLfloat y1 = (o.y-40.0)/40.0;
 	GLfloat z1 = -o.height/80.0;
@@ -425,10 +426,10 @@ void AirplaneEnvironment::OpenGLDraw(const airplaneState& o, const airplaneState
 
 void AirplaneEnvironment::OpenGLDraw(const airplaneState &, const airplaneAction &) const
 {
-	
+
 }
 
 void AirplaneEnvironment::GLDrawLine(const airplaneState &a, const airplaneState &b) const
 {
-	
+
 }

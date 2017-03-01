@@ -11,7 +11,7 @@ COMMON_CXXFLAGS += -Wall -std=c++11 # -stdlib=libc++
 #COMMON_CXXFLAGS += -ansi -pedantic
 
 CC = gcc
-COMMON_CFLAGS += -Wall 
+COMMON_CFLAGS += -Wall
 
 LN = $(CXX)
 #COMMON_LNFLAGS += -stdlib=libc++
@@ -29,7 +29,7 @@ ifeq ("$(OPENGL)", "STUB")
 COMMON_CXXFLAGS += -I$(ROOT)/gui/ -I$(ROOT)/gui/GL/ -DNO_OPENGL
 else
 COMMON_LNFLAGS += -framework Foundation -framework AppKit
-COMMON_CXXFLAGS += -DOS_MAC  
+COMMON_CXXFLAGS += -DOS_MAC
 
 COMMON_LNFLAGS += -framework GLUT -framework OpenGL
 COMMON_CXXFLAGS += -I/System/Library/Frameworks/GLUT.framework/Versions/A/Headers/
@@ -39,18 +39,22 @@ endif
 
 else # not darwin
 
-# if Linux need some other pthread call 
+# if Linux need some other pthread call
 ifeq ($(findstring "Linux", "$(shell uname -s)"), "Linux")
 COMMON_LNFLAGS += -Lapps/libs -Ldemos/libs -L/usr/X11R6/lib64 -L/usr/X11R6/lib -pthread #--stdlib=libstdc++ # -lXi -lXmu
 else
-COMMON_LNFLAGS += -Lapps/libs -Ldemos/libs -L/usr/X11R6/lib64 -L/usr/X11R6/lib -lpthread #--stdlib=libstdc++ # -lXi -lXmu 
+COMMON_LNFLAGS += -Lapps/libs -Ldemos/libs -L/usr/X11R6/lib64 -L/usr/X11R6/lib -lpthread #--stdlib=libstdc++ # -lXi -lXmu
 endif
 
 ifeq ("$(OPENGL)", "STUB")
 COMMON_CXXFLAGS += -I$(ROOT)/gui/ -I$(ROOT)/gui/GL/ -DNO_OPENGL
 else
-COMMON_CXXFLAGS += -I/usr/include/GL
-COMMON_LNFLAGS +=  -lGL -lGLU -lglut
+  ifeq ($(OS),Windows_NT)
+    COMMON_LNFLAGS +=  -lopengl32 -lglu32 -lfreeglut
+  else
+    COMMON_CXXFLAGS += -I/usr/include/GL
+    COMMON_LNFLAGS +=  -lGL -lGLU -lglut
+  endif
 endif
 
 endif
@@ -100,7 +104,7 @@ $(REL_OBJDIR)/%.o: %.c
 
 # Creation of dependency files using the compiler with -MM option and
 # sed for postprocessing of its output (including the dependency file in
-# the target section and adding the correct path to the object file). 
+# the target section and adding the correct path to the object file).
 # Dependency files are separated for each project, even if the
 # object files are shared, since the compiler generated dependency lines
 # contain relative paths.

@@ -13,12 +13,12 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * HOG is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with HOG; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
@@ -110,7 +110,7 @@ void CreateSimulation(int id)
 	text.SetBold(true);
 	b.SetObstacle(24);
 	b.SetObstacle(31);
-	
+
 //	std::vector<FlingBoard> path;
 //	BFS<FlingBoard, FlingMove> bfs;
 //	bfs.GetPath(&f, b, g, path);
@@ -185,8 +185,8 @@ void InstallHandlers()
 	InstallCommandLineHandler(MyCLHandler, "-uniqueSolution", "-uniqueSolution <state>", "Determine if a state has a unique solution");
 	InstallCommandLineHandler(MyCLHandler, "-showSolutionLocs", "-showSolutionLocs <state>", "Show all locations that can be reached at the end.");
 	InstallCommandLineHandler(MyCLHandler, "-measureSolutionSimilarity", "-measureSolutionSimilarity <state>", "Measure how many times the solution changes pieces");
-	
-	
+
+
 	InstallWindowHandler(MyWindowHandler);
 
 	InstallMouseClickHandler(MyClickHandler);
@@ -234,7 +234,7 @@ void MyFrameHandler(unsigned long windowID, unsigned int viewport, void *)
 		val[1] = '0'+counts[x]%10;
 		f.GLLabelState(tmp, val);
 	}
-	
+
 	text.OpenGLDraw(windowID);
 }
 
@@ -314,7 +314,7 @@ int MyCLHandler(char *argument[], int maxNumArgs)
 			}
 		}
 		std::cout << b << std::endl;
-		
+
 		BFS<FlingBoard, FlingMove> bfs;
 		bfs.GetPath(&f, b, g, path);
 		printf("%llu total nodes expanded in pure bfs\n", bfs.GetNodesExpanded());
@@ -351,7 +351,7 @@ int MyCLHandler(char *argument[], int maxNumArgs)
 			f.GetStateFromHash(which, b);
 			//f.unrankPlayer(which, atoi(argument[1]), b);
 			std::cout << b << std::endl;
-			
+
 			AnalyzeBoard(0, kNoModifier, 'a');
 			AnalyzeBoard(0, kNoModifier, 'A');
 		}
@@ -437,7 +437,7 @@ int MyCLHandler(char *argument[], int maxNumArgs)
 		std::vector<FlingMove> stateActs;
 		unsigned long long which = strtoull(argument[1], 0, 10);
 		f.GetStateFromHash(which, b);
-		
+
 		if (maxNumArgs > 2) // also read goal location
 		{
 			if (strcmp(argument[2], "rocks") == 0)
@@ -450,7 +450,7 @@ int MyCLHandler(char *argument[], int maxNumArgs)
 				f.SetGoalLoc(atoi(argument[2]));
 			}
 		}
-		
+
 		GetSolveActions(b, stateActs);
 		std::cout << b << "\n";
 		for (int x = 0; x < stateActs.size(); x++)
@@ -481,8 +481,8 @@ int MyCLHandler(char *argument[], int maxNumArgs)
 					x2 = GetX(b.LocationAfterAction(stateActs[t]));
 					y1 = GetY(stateActs[t-1].startLoc);
 					y2 = GetY(bNext.LocationAfterAction(stateActs[t-1]));
-					
-					
+
+
 					// bounds of first move (x-axis) are outside the second move
 					if (GetX(stateActs[t-1].startLoc) < max(x1, x2) &&
 						GetX(stateActs[t-1].startLoc) > min(x1, x2))
@@ -497,7 +497,7 @@ int MyCLHandler(char *argument[], int maxNumArgs)
 					x2 = GetX(bNext.LocationAfterAction(stateActs[t-1]));
 					y1 = GetY(stateActs[t].startLoc);
 					y2 = GetY(b.LocationAfterAction(stateActs[t]));
-					
+
 					// bounds of first move (y-axis) are outside the second move
 					if (GetY(stateActs[t].startLoc) < max(y1, y2) &&
 						GetY(stateActs[t].startLoc) > min(y1, y2))
@@ -508,7 +508,7 @@ int MyCLHandler(char *argument[], int maxNumArgs)
 					}
 				}
 
-	
+
 //				if (((min(x1, x2) < GetX(stateActs[t1].startLoc) && max(x1, x2) == GetX(stateActs[t1].startLoc)) ||
 //					 (min(x1, x2) == GetX(stateActs[t1].startLoc) && max(x1, x2) > GetX(stateActs[t1].startLoc)))
 //					&&
@@ -530,7 +530,7 @@ int MyCLHandler(char *argument[], int maxNumArgs)
 //			{
 //				sum += 8;
 //			}
-			
+
 //			// same piece
 //			if (b.LocationAfterAction(stateActs[t]) == stateActs[t-1].startLoc)
 //			{
@@ -548,8 +548,8 @@ int MyCLHandler(char *argument[], int maxNumArgs)
 //			else {
 //				sum += 4;
 //			}
-			
-			
+
+
 //			sum += w1*dist(b.LocationAfterAction(stateActs[t]), stateActs[t-1].startLoc);
 //			sum += w2*dist(b.LocationAfterAction(stateActs[t]), bNext.LocationAfterAction(stateActs[t-1]));
 //			sum += w3*dist(stateActs[t].startLoc, stateActs[t-1].startLoc);
@@ -565,7 +565,7 @@ int MyCLHandler(char *argument[], int maxNumArgs)
 		unsigned long long which = strtoull(argument[1], 0, 10);
 		f.GetStateFromHash(which, b);
 		int sol;
-		
+
 		UniquelySolvable(b, sol);
 		std::cout << b << std::endl;
 		std::cout << sol << " solutions found.\n";
@@ -684,7 +684,7 @@ void GetReducedMoves(FlingBoard s1, FlingBoard s2, std::vector<FlingMove> &moves
 {
 	std::vector<FlingMove> m1, m2;
 	FlingMove between;
-	
+
 	/**
 	 * Note:
 	 * Sometimes there are 2 different moves that can be the between action. In this
@@ -692,12 +692,12 @@ void GetReducedMoves(FlingBoard s1, FlingBoard s2, std::vector<FlingMove> &moves
 	 * #'s of moves in the BFS depending on how moves are generated.
 	 */
 	between = f.GetAction(s1, s2);
-	
+
 	f.GetActions(s1, m1);
 	f.GetActions(s2, m2);
-	
+
 	std::vector<FlingMove> commonMoves;
-	
+
 	moves.resize(0);
 	// find common moves
 	for (int x = 0; x < m1.size(); x++)
@@ -711,7 +711,7 @@ void GetReducedMoves(FlingBoard s1, FlingBoard s2, std::vector<FlingMove> &moves
 			}
 		}
 	}
-	
+
 	FlingBoard t1, t2;
 	t1.SetObstacles(s1.GetObstacles());
 	t2.SetObstacles(s2.GetObstacles());
@@ -787,7 +787,7 @@ void SolveRandomFlingInstance(unsigned long windowID, tKeyboardModifier , char)
 			b.AddFling(x1, y1);
 	}
 	std::cout << b << std::endl;
-	
+
 	std::vector<FlingBoard> path;
 	BFS<FlingBoard, FlingMove> bfs;
 	bfs.GetPath(&f, b, g, path);
@@ -797,7 +797,7 @@ void SolveAndSaveInstance(unsigned long , tKeyboardModifier , char)
 {
 	std::ofstream myfile;
 	myfile.open("/Users/nathanst/boards.txt", std::ios::app | std::ios::out );
-	
+
 	BFS<FlingBoard, FlingMove> bfs;
 	bfs.GetPath(&f, b, g, path);
 
@@ -805,13 +805,13 @@ void SolveAndSaveInstance(unsigned long , tKeyboardModifier , char)
 	myfile << b << std::endl;
 	myfile << "\n----\n\n";
 	myfile.close();
-	
+
 	for (unsigned int x = 0; x < path.size(); x++)
 	{
 		std::cout << "(" << x << ")" << std::endl;
 		std::cout << path[x] << std::endl << std::endl;
 	}
-	
+
 	//b.Reset();
 	pathLoc = path.size()-1;
 }
@@ -828,7 +828,7 @@ int64_t uniqueSolvable;
 
 void *ThreadedWorker(void *arg)
 {
-	int id = (long)arg;
+	int64_t id = (int64_t) arg;
 	int64_t solved = 0;
 	int64_t uniqueSolved = 0;
 	FlingBoard currState, tmp;
@@ -1102,21 +1102,21 @@ uint64_t RecursiveBFS(FlingBoard from, std::vector<FlingBoard> &thePath, Fling *
 	thePath.resize(0);
 	FlingBoard parentState;
 	std::vector<FlingMove> moves;
-	
+
 	uint64_t nodesExpanded = 0;
 	uint64_t weightedNodes = 0;
 	int weight = from.locs.size();
-	
+
 	mOpen.clear();
 	mClosed.clear();
 	depth.clear();
-	
+
 	depth.push_back(0);
 	mOpen.push_back(from);
 	mClosed[env->GetStateHash(from)] = env->GetStateHash(from);
 	//	printf("Setting parent of %llu to be %llu\n", env->GetStateHash(from),
 	//		   env->GetStateHash(from));
-	
+
 	int currDepth = 0;
 	uint64_t lastNodes = 0, lastIter = 0;
 	FlingBoard s, tmp;
@@ -1135,7 +1135,7 @@ uint64_t RecursiveBFS(FlingBoard from, std::vector<FlingBoard> &thePath, Fling *
 		}
 		currDepth = depth.front();
 		depth.pop_front();
-		
+
 		nodesExpanded++;
 		//weightedNodes += (weight-currDepth);
 		if (mClosed.find(env->GetStateHash(s)) != mClosed.end())
@@ -1184,7 +1184,7 @@ uint64_t RecursiveBFS(FlingBoard from, std::vector<FlingBoard> &thePath, Fling *
 	}
 //	printf("%d tot %llu inc %lld b %.2f\n", currDepth, nodesExpanded, nodesExpanded-lastNodes, (double)(nodesExpanded-lastNodes)/lastIter);
 //	std::cout << "Final state:\n" << s << std::endl;
-	
+
 	thePath.resize(0);
 	uint64_t parent, lastParent;
 	//	std::cout << s << std::endl;
@@ -1225,7 +1225,7 @@ void BFSearch(unsigned long windowID, tKeyboardModifier mod, char key)
 		nodesExpanded = bfs.GetNodesExpanded();
 	}
 	t.EndTimer();
-	
+
 	char line[255];
 	sprintf(line, "%llu total nodes", nodesExpanded);
 	text.AddLine(line);
@@ -1419,7 +1419,7 @@ bool MyClickHandler(unsigned long , int, int, point3d loc, tButtonType button, t
 {
 //	if (event != kMouseDown)
 //		return false;
-	
+
 	if (button == kRightButton)
 	{
 		static int lastx, lasty;
@@ -1674,7 +1674,7 @@ void RemoveDups(std::vector<uint64_t> &values)
 				if (!match)
 					printf("Failed unique map test\n");
 			}
-			
+
 			if (match)
 			{
 				// 2. also need constant relative flipping
@@ -1701,7 +1701,7 @@ void RemoveDups(std::vector<uint64_t> &values)
 				FlingBoard s1b, s2b;
 				f.GetStateFromHash(values[x], s1a);
 				f.GetStateFromHash(values[y], s2a);
-				
+
 				f.GetStateFromHash(values[x], s1b);
 				f.GetStateFromHash(values[y], s2b);
 				f.ApplyAction(s1b, stateActs[x].back());
@@ -1733,12 +1733,12 @@ void RemoveDups(std::vector<uint64_t> &values)
 				FlingBoard s1b, s2b;
 				f.GetStateFromHash(values[x], s1a);
 				f.GetStateFromHash(values[y], s2a);
-				
+
 				f.GetStateFromHash(values[x], s1b);
 				f.GetStateFromHash(values[y], s2b);
 				f.ApplyAction(s1b, stateActs[x].back());
 				f.ApplyAction(s2b, stateActs[y].back());
-				
+
 				for (int t = stateActs[x].size()-1; t > 1; t--)
 				{
 					bool same1 = ((s1a.GetRawBoard()^s1b.GetRawBoard())&(1ull<<stateActs[x][t-1].startLoc)); // same piece moved
@@ -1754,14 +1754,14 @@ void RemoveDups(std::vector<uint64_t> &values)
 						match = false;
 						break;
 					}
-					
+
 					f.ApplyAction(s1a, stateActs[x][t]);
 					f.ApplyAction(s2a, stateActs[y][t]);
-					
+
 					f.ApplyAction(s1b, stateActs[x][t-1]);
 					f.ApplyAction(s2b, stateActs[y][t-1]);
 				}
-				
+
 				if (!match)
 					printf("Failed identical piece move test\n");
 			}
@@ -1901,7 +1901,7 @@ void AnalyzeEndLocs(int level)
 	uint64_t maxVal = f.getMaxSinglePlayerRank(56, level);
 	int numThreads = std::thread::hardware_concurrency();
 	std::cout << "Running with " << numThreads << " threads\n";
-	
+
 	uint64_t perThread = maxVal/numThreads;
 	std::vector<std::thread*> threads;
 	std::mutex lock;
@@ -1960,7 +1960,7 @@ void AnalyzeRocks(int level)
 	uint64_t maxVal = f.getMaxSinglePlayerRank(56, level);
 	int numThreads = std::thread::hardware_concurrency();
 	std::cout << "Running with " << numThreads << " threads\n";
-	
+
 	uint64_t perThread = maxVal/numThreads;
 	std::vector<std::thread*> threads;
 	std::mutex lock;
@@ -1982,7 +1982,7 @@ void ThreadedFinalPieceAnalyze(int level, uint64_t start, uint64_t end, std::mut
 	FlingBoard theBoard, g;
 	std::vector<FlingBoard> path;
 	BFS<FlingBoard, FlingMove> bfs;
-	
+
 	for (uint64_t t = start; t < end; t++)
 	{
 		if (0 == t%1000000)
@@ -1992,7 +1992,7 @@ void ThreadedFinalPieceAnalyze(int level, uint64_t start, uint64_t end, std::mut
 			lock->unlock();
 		}
 		fling.unrankPlayer(t, level, theBoard);
-		
+
 		std::unordered_map<uint64_t, int> dd;
 		int finalPiece[14] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 		Fling f;
@@ -2025,7 +2025,7 @@ void ThreadedFinalPieceAnalyze(int level, uint64_t start, uint64_t end, std::mut
 			uint64_t nodesExpanded = DoLimitedBFS(theBoard, path);
 			printf(" Ratio: %llu %llu %1.4f\n", bfs.GetNodesExpanded(), nodesExpanded, double(bfs.GetNodesExpanded())/double(nodesExpanded));
 
-			
+
 			for (const auto &x : theBoard.locs)
 			{
 				std::cout << x.first << " " << x.second << " " << finalPiece[x.second] << "\n";
@@ -2040,7 +2040,7 @@ void AnalyzeFinalPieces(int level)
 	uint64_t maxVal = f.getMaxSinglePlayerRank(56, level);
 	int numThreads = std::thread::hardware_concurrency();
 	std::cout << "Running with " << numThreads << " threads\n";
-	
+
 	uint64_t perThread = maxVal/numThreads;
 	std::vector<std::thread*> threads;
 	std::mutex lock;

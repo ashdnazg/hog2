@@ -12,10 +12,9 @@
 
 #include <stdio.h>
 #include <vector>
-#ifndef WIN32
+#if !defined(WIN32) || defined(__MINGW32__)
 #include <stdint.h>
-#endif
-#ifdef WIN32
+#else
 #include "pstdint.h"
 #endif
 
@@ -45,13 +44,13 @@ public:
 		printf("biClrUsed: %d\n", biClrUsed);
 		printf("biClrImportant: %d\n", biClrImportant);
 	}
-	
+
 	//	uint16_t bfType;//	19778
 	uint32_t bfSize; //	??	specifies the size of the file in bytes.
 	uint32_t zero; // 0
 	uint32_t bfOffBits;
 	//	11	4	bfOffBits	1078	specifies the offset from the beginning of the file to the bitmap data.
-	
+
 	uint32_t biSize; // 40
 	uint32_t biWidth;
 	uint32_t biHeight;
@@ -75,7 +74,7 @@ public:
 	int GetWidth() { return width; }
 	int GetHeight() { return height; }
 	void SetPixel(int x, int y, uint8_t redByte, uint8_t greenByte, uint8_t blueByte, uint8_t alphaByte = 0)
-	{ 
+	{
 		if (BytesReversed())
 		{
 			image[y*width*4+x*4+0] = blueByte;

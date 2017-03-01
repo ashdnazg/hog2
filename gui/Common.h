@@ -8,16 +8,16 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * HOG is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with HOG; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- */ 
+ */
 
 #include "GLUtil.h"
 #include <stdio.h>
@@ -25,6 +25,15 @@
 
 #ifndef COMMON_H
 #define COMMON_H
+
+
+#ifdef near
+#undef near
+#endif
+
+#ifdef far
+#undef far
+#endif
 
 const int MAXPORTS = 4;
 
@@ -41,7 +50,7 @@ typedef struct {
 	recVec viewPos; // View position
 
 	bool thirdPerson;
-	
+
 	// third-person (?) camera that can be programatically controlled using gluLookAt
 	recVec viewDir; // View direction vector
 	recVec viewUp; // View up direction
@@ -51,7 +60,7 @@ typedef struct {
 	recFrustum frust; // set in updateProjection
 	GLdouble aperture; // camera aperture
 	GLint viewWidth,viewHeight; // current window/screen height and width
-	GLfloat viewOriginX, viewOriginY; // always 0 
+	GLfloat viewOriginX, viewOriginY; // always 0
 } recCamera;
 
 // per view data
@@ -59,15 +68,15 @@ struct recContext
 {
 	// camera handling
 	recCamera globalCamera; // has full screen size; see resizeGL()
-	
+
 	recCamera camera[MAXPORTS];
 
 	int numPorts, currPort;
 	bool moveAllPortsTogether;
-	
+
 	char message[256]; // buffer for message output
 	float msgTime; // message posting time for expiration
-	
+
 	unsigned long windowID;
 };
 typedef struct recContext recContext;
@@ -167,7 +176,7 @@ public:
 
 	void Print()
 	{ printf("%s : %s\n     %s\n", argument, param, desc); }
-	
+
 	CommandLineCallback CLC;
 	const char *argument;
 	const char *param;
@@ -179,7 +188,7 @@ public:
 	keyboardCallbackData(KeyboardCallback kc, const char *_title, const char *_desc,
 											 tKeyboardModifier _mod, keyboardCallbackData *_next = 0)
 	:call(kc), title(_title), desc(_desc), mod(_mod), next(_next) {}
-	
+
 	KeyboardCallback call;
 	const char *title;
 	const char *desc;
@@ -219,7 +228,7 @@ public:
 	:glCall(_glCall)
 	{ windowID = _windowID;
 		userData = _userData; }
-	
+
 	FrameCallback glCall;
 	unsigned long windowID;
 	void *userData;

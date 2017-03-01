@@ -12,10 +12,15 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <unistd.h>
-#include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+
+#ifndef __MINGW32__
+#include <sys/mman.h>
+#else
+#include "MinGWMMan.h"
+#endif
 
 #ifndef MAP_ANONYMOUS
 #define MAP_ANONYMOUS MAP_ANON
@@ -27,7 +32,7 @@ do { perror(msg); exit(EXIT_FAILURE); } while (0)
 uint8_t *GetMMAP(const char *filename, uint64_t mapSize, int &fd, bool zero)
 {
 	uint8_t *memblock;
-	
+
 	if (filename == 0)
 	{
 		memblock = (uint8_t *)mmap(NULL, mapSize, PROT_WRITE|PROT_READ, MAP_SHARED|MAP_ANONYMOUS, -1, 0);
@@ -37,10 +42,10 @@ uint8_t *GetMMAP(const char *filename, uint64_t mapSize, int &fd, bool zero)
 		}
 		return memblock;
 	}
-	
+
 	//int fd;
 	struct stat sb;
-	
+
 	printf("Size of off_t is (%lu), uint64_t is (%lu)\n", sizeof(off_t), sizeof(uint64_t));
 	if (zero)
 	{
@@ -67,11 +72,11 @@ uint8_t *GetMMAP(const char *filename, uint64_t mapSize, int &fd, bool zero)
 			handle_error("open");
 		}
 	}
-	
+
 	fstat(fd, &sb);
 	printf("Size: %llu \n",(uint64_t)sb.st_size);
 	assert(sb.st_size >= mapSize);
-	
+
 	memblock = (uint8_t *)mmap(NULL, sb.st_size, PROT_WRITE|PROT_READ, /*MAP_PRIVATE|MAP_POPULATE*/MAP_SHARED, fd, 0);
 	//madvise(memblock, sb.st_size, MADV_RANDOM|MADV_WILLNEED);
 	if (memblock == MAP_FAILED)

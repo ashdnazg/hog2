@@ -22,7 +22,6 @@
 #include <cstdio>
 #include "BitVector.h"
 #include "MMapUtil.h"
-#include <sys/mman.h>
 
 
 BitVector::BitVector(uint64_t _size)
@@ -82,7 +81,7 @@ void BitVector::Load(const char *file)
 		printf("BitVector is memmapped; not loading\n");
 		return;
 	}
-	
+
 	delete [] storage;
 	FILE *f = fopen(file, "r");
 	if (f == 0)
@@ -95,11 +94,11 @@ void BitVector::Load(const char *file)
 	printf("Loading %llu entries\n", true_size);
 	// allocate storage
 	size = (true_size>>storageBitsPower)+1;
-	
+
 	storage = new storageElement[size];
 	//	for (int x = 0; x < size; x++)
 	//		storage[x] = 0;
-	
+
 	// TODO:
 	fread(storage, sizeof(storageElement), size, f);
 	fclose(f);
