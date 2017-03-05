@@ -36,7 +36,7 @@ struct TOHState {
 		}
 		counts[3] = numDisks;
 	}
-	
+
 	void Reset()
 	{
 		for (int x = 0; x < 4; x++)
@@ -61,12 +61,12 @@ struct TOHState {
 		}
 		counts[0] = numDisks;
 	}
-	
+
 	int GetDiskCountOnPeg(int whichPeg) const
 	{
 		return counts[whichPeg];
 	}
-	
+
 	int GetDiskOnPeg(int whichPeg, int whichDisk) const
 	{
 		return disks[whichPeg][whichDisk];
@@ -100,7 +100,7 @@ static std::ostream &operator<<(std::ostream &out, const TOHState<D> &s)
 
 template <int D>
 static bool operator==(const TOHState<D> &l1, const TOHState<D> &l2) {
-	for (int x = 0; x < 4; x++)
+	for (int x = 3; x >= 0; x--)
 	{
 		if (l1.GetDiskCountOnPeg(x) != l2.GetDiskCountOnPeg(x))
 			return false;
@@ -265,7 +265,7 @@ bool TOH<disks>::GoalTest(const TOHState<disks> &node, const TOHState<disks> &go
 {
 	// NOTE: this is using the standard goal state; arbitrary goal states
 	// are more expensive to check
-	return (node.GetDiskCountOnPeg(3)==disks);
+	return node == goal;
 }
 
 
@@ -349,7 +349,7 @@ void TOH<disks>::OpenGLDraw(const TOHState<disks>&s, const TOHState<disks>&s2, f
 	int animatingDisk = s.GetSmallestDiskOnPeg(m.source);
 	int initialHeight = s.GetDiskCountOnPeg(m.source)-1;
 	int finalHeight = s.GetDiskCountOnPeg(m.dest);
-	
+
 	glColor3f(0.0, 0.0, 1.0);
 	double offset[4] = {-0.75, -0.25, 0.25, 0.75};
 	for (int x = 0; x < 4; x++)
@@ -388,7 +388,7 @@ void TOH<disks>::OpenGLDraw(const TOHState<disks>&s, const TOHState<disks>&s2, f
 template <int disks>
 void TOH<disks>::OpenGLDraw(const TOHState<disks>&, const TOHMove&) const
 {
-	
+
 }
 
 template <int patternDisks, int totalDisks, int offset=0>
@@ -401,7 +401,7 @@ public:
 	TOHState<totalDisks> GetStateFromAbstractState(TOHState<patternDisks> &start) const
 	{
 		int diff = totalDisks - patternDisks;
-		
+
 		TOHState<totalDisks> tmp;
 		for (int x = 0; x < 4; x++)
 		{
@@ -449,7 +449,7 @@ public:
 	{
 		this->env->GetStateFromHash(hash, s);
 	}
-	
+
 	virtual bool Load(const char *prefix) {}
 	virtual void Save(const char *prefix) {}
 	virtual std::string GetFileName(const char *prefix) {}
