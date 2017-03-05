@@ -14,12 +14,12 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * HOG2 is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with HOG2; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
@@ -43,8 +43,10 @@
 #include <ext/hash_map>
 #include "AStarOpenClosed.h"
 #include "BucketOpenClosed.h"
+#include "PairHash.h"
 //#include "SearchEnvironment.h" // for the SearchEnvironment class
 #include "float.h"
+#include <unordered_map>
 
 #include <algorithm> // for vector reverse
 
@@ -73,17 +75,17 @@ public:
 	virtual ~TemplateAStar() {}
 	void GetPath(environment *env, const state& from, const state& to, std::vector<state> &thePath);
 	void GetPath(environment *, const state& , const state& , std::vector<action> & );
-	
+
 	openList openClosedList;
 	//AStarOpenClosed<state, AStarCompare<state> > openClosedList;
 	//BucketOpenClosed<state, AStarCompare<state> > openClosedList;
 	state goal, start;
-	
+
 	bool InitializeSearch(environment *env, const state& from, const state& to, std::vector<state> &thePath);
 	bool DoSingleSearchStep(std::vector<state> &thePath);
 	void AddAdditionalStartState(state& newState);
 	void AddAdditionalStartState(state& newState, double cost);
-	
+
 	state CheckNextNode();
 	void ExtractPathToStart(state &node, std::vector<state> &thePath)
 	{ uint64_t theID; openClosedList.Lookup(env->GetStateHash(node), theID); ExtractPathToStartFromID(theID, thePath); }
@@ -91,12 +93,12 @@ public:
 	const state &GetParent(const state &s);
 	void DoAbstractSearch(){useOccupancyInfo = false; useRadius = false;}
 	virtual const char *GetName();
-	
+
 	void PrintStats();
 	uint64_t GetUniqueNodesExpanded() { return uniqueNodesExpanded; }
-	void ResetNodeCount() { nodesExpanded = nodesTouched = 0; uniqueNodesExpanded = 0; }
+	void ResetNodeCount() { nodesExpanded = nodesTouched = 0; uniqueNodesExpanded = 0; counts.clear(); }
 	int GetMemoryUsage();
-	
+
 	bool GetClosedListGCost(const state &val, double &gCost) const;
 	bool GetOpenListGCost(const state &val, double &gCost) const;
 	bool GetClosedItem(const state &s, AStarOpenClosedData<state> &);
@@ -108,7 +110,7 @@ public:
 	{ uint64_t key; return openClosedList.Lookup(env->GetStateHash(val), key) != kNotFound; }
 	dataLocation GetStateLocation(const state &val)
 	{ uint64_t key; return openClosedList.Lookup(env->GetStateHash(val), key); }
-	
+
 	void SetUseBPMX(int depth) { useBPMX = depth; if (depth) reopenNodes = true; }
 	int GetUsingBPMX() { return useBPMX; }
 
@@ -116,48 +118,49 @@ public:
 	bool GetReopenNodes() { return reopenNodes; }
 
 	void SetDirected(bool d) { directed = d; }
-	
+
 	void SetHeuristic(Heuristic<state> *h) { theHeuristic = h; }
-	
+
 	uint64_t GetNodesExpanded() const { return nodesExpanded; }
 	uint64_t GetNodesTouched() const { return nodesTouched; }
 	uint64_t GetNecessaryExpansions() const;
 	void LogFinalStats(StatCollection *) {}
-	
+
 	void SetRadius(double rad) {radius = rad;}
 	double GetRadius() { return radius; }
-	
+
 	void SetRadiusEnvironment(environment *e) {radEnv = e;}
-	
+
 	void SetStopAfterGoal(bool val) { stopAfterGoal = val; }
 	bool GetStopAfterGoal() { return stopAfterGoal; }
-	
+
 	void FullBPMX(uint64_t nodeID, int distance);
-	
+
 	void OpenGLDraw() const;
 	void Draw() const;
 	std::string SVGDraw() const;
 	std::string SVGDrawDetailed() const;
-	
+
 	void SetWeight(double w) {weight = w;}
 private:
 	uint64_t nodesTouched, nodesExpanded;
+	std::unordered_map<std::pair<double, double>, int64_t> counts;
 //	bool GetNextNode(state &next);
 //	//state Node();
 //	void UpdateClosedNode(environment *env, state& currOpenNode, state& neighbor);
 //	void UpdateWeight(environment *env, state& currOpenNode, state& neighbor);
 //	void AddToOpenList(environment *env, state& currOpenNode, state& neighbor);
-	
+
 	std::vector<state> neighbors;
 	std::vector<uint64_t> neighborID;
 	std::vector<double> edgeCosts;
 	std::vector<dataLocation> neighborLoc;
 	environment *env;
 	bool stopAfterGoal;
-	
+
 	double goalFCost;
 	double radius; // how far around do we consider other agents?
-	double weight; 
+	double weight;
 	bool directed;
 	bool useOccupancyInfo;// = false;
 	bool useRadius;// = false;
@@ -171,7 +174,7 @@ private:
 //static const bool verbose = false;
 
 /**
- * Return the name of the algorithm. 
+ * Return the name of the algorithm.
  * @author Nathan Sturtevant
  * @date 03/22/06
  *
@@ -187,22 +190,22 @@ const char *TemplateAStar<state,action,environment,openList>::GetName()
 }
 
 /**
- * Perform an A* search between two states.  
+ * Perform an A* search between two states.
  * @author Nathan Sturtevant
  * @date 03/22/06
  *
  * @param _env The search environment
  * @param from The start state
  * @param to The goal state
- * @param thePath A vector of states which will contain an optimal path 
- * between from and to when the function returns, if one exists. 
+ * @param thePath A vector of states which will contain an optimal path
+ * between from and to when the function returns, if one exists.
  */
 template <class state, class action, class environment, class openList>
 void TemplateAStar<state,action,environment,openList>::GetPath(environment *_env, const state& from, const state& to, std::vector<state> &thePath)
 {
 	//discardcount=0;
   	if (!InitializeSearch(_env, from, to, thePath))
-  	{	
+  	{
   		return;
   	}
   	while (!DoSingleSearchStep(thePath))
@@ -233,9 +236,9 @@ void TemplateAStar<state,action,environment,openList>::GetPath(environment *_env
 
 /**
  * Initialize the A* search
- * @author Nathan Sturtevant	
+ * @author Nathan Sturtevant
  * @date 03/22/06
- * 
+ *
  * @param _env The search environment
  * @param from The start state
  * @param to The goal state
@@ -245,7 +248,7 @@ template <class state, class action, class environment, class openList>
 bool TemplateAStar<state,action,environment,openList>::InitializeSearch(environment *_env, const state& from, const state& to, std::vector<state> &thePath)
 {
 	//lastF = 0;
-	
+
 	if (theHeuristic == 0)
 		theHeuristic = _env;
 	thePath.resize(0);
@@ -262,14 +265,14 @@ bool TemplateAStar<state,action,environment,openList>::InitializeSearch(environm
 	ResetNodeCount();
 	start = from;
 	goal = to;
-	
+
 	if (env->GoalTest(from, to) && (stopAfterGoal)) //assumes that from and to are valid states
 	{
 		return false;
 	}
-	
+
 	openClosedList.AddOpenNode(start, env->GetStateHash(start), 0, weight*theHeuristic->HCost(start, goal));
-	
+
 	return true;
 }
 
@@ -296,11 +299,11 @@ void TemplateAStar<state,action,environment,openList>::AddAdditionalStartState(s
 }
 
 /**
- * Expand a single node. 
+ * Expand a single node.
  * @author Nathan Sturtevant
  * @date 03/22/06
- * 
- * @param thePath will contain an optimal path from start to goal if the 
+ *
+ * @param thePath will contain an optimal path from start to goal if the
  * function returns TRUE
  * @return TRUE if there is no path or if we have found the goal, FALSE
  * otherwise
@@ -327,19 +330,19 @@ bool TemplateAStar<state,action,environment,openList>::DoSingleSearchStep(std::v
 	{
 		ExtractPathToStartFromID(nodeid, thePath);
 		// Path is backwards - reverse
-		reverse(thePath.begin(), thePath.end()); 
+		reverse(thePath.begin(), thePath.end());
 		goalFCost = openClosedList.Lookup(nodeid).g + openClosedList.Lookup(nodeid).h;
 		return true;
 	}
-	
+
  	neighbors.resize(0);
 	edgeCosts.resize(0);
 	neighborID.resize(0);
 	neighborLoc.resize(0);
-	
+
 //	std::cout << "Expanding: " << openClosedList.Lookup(nodeid).data << " with f:";
 //	std::cout << openClosedList.Lookup(nodeid).g+openClosedList.Lookup(nodeid).h << std::endl;
-	
+
  	env->GetSuccessors(openClosedList.Lookup(nodeid).data, neighbors);
 	double bestH = openClosedList.Lookup(nodeid).h;
 	double lowHC = DBL_MAX;
@@ -366,14 +369,14 @@ bool TemplateAStar<state,action,environment,openList>::DoSingleSearchStep(std::v
 			}
 		}
 	}
-	
+
 	if (useBPMX) // propagate best child to parent
 	{
 		if (!directed)
 			openClosedList.Lookup(nodeid).h = std::max(openClosedList.Lookup(nodeid).h, bestH);
 		openClosedList.Lookup(nodeid).h = std::max(openClosedList.Lookup(nodeid).h, lowHC);
 	}
-	
+
 	// iterate again updating costs and writing out to memory
 	for (int x = 0; x < neighbors.size(); x++)
 	{
@@ -390,7 +393,7 @@ bool TemplateAStar<state,action,environment,openList>::DoSingleSearchStep(std::v
 				{
 					if (fless(openClosedList.Lookup(neighborID[x]).h, bestH-edgeCosts[x]))
 					{
-						openClosedList.Lookup(neighborID[x]).h = bestH-edgeCosts[x]; 
+						openClosedList.Lookup(neighborID[x]).h = bestH-edgeCosts[x];
 						if (useBPMX > 1) FullBPMX(neighborID[x], useBPMX-1);
 					}
 				}
@@ -429,7 +432,7 @@ bool TemplateAStar<state,action,environment,openList>::DoSingleSearchStep(std::v
 				{
 					if (fgreater(bestH-edgeCosts[x], openClosedList.Lookup(neighborID[x]).h))
 					{
-						openClosedList.Lookup(neighborID[x]).h = std::max(openClosedList.Lookup(neighborID[x]).h, bestH-edgeCosts[x]); 
+						openClosedList.Lookup(neighborID[x]).h = std::max(openClosedList.Lookup(neighborID[x]).h, bestH-edgeCosts[x]);
 						openClosedList.KeyChanged(neighborID[x]);
 					}
 				}
@@ -473,16 +476,16 @@ bool TemplateAStar<state,action,environment,openList>::DoSingleSearchStep(std::v
 				}
 		}
 	}
-		
+
 	return false;
 }
 
 /**
- * Returns the next state on the open list (but doesn't pop it off the queue). 
+ * Returns the next state on the open list (but doesn't pop it off the queue).
  * @author Nathan Sturtevant
  * @date 03/22/06
- * 
- * @return The first state in the open list. 
+ *
+ * @return The first state in the open list.
  */
 template <class state, class action, class environment, class openList>
 state TemplateAStar<state, action,environment,openList>::CheckNextNode()
@@ -497,20 +500,25 @@ state TemplateAStar<state, action,environment,openList>::CheckNextNode()
  * Perform a full bpmx propagation
  * @author Nathan Sturtevant
  * @date 6/9/9
- * 
- * @return The first state in the open list. 
+ *
+ * @return The first state in the open list.
  */
 template <class state, class action, class environment, class openList>
 void TemplateAStar<state, action,environment,openList>::FullBPMX(uint64_t nodeID, int distance)
 {
 	if (distance <= 0)
 		return;
-	
+
 	nodesExpanded++;
 	std::vector<state> succ;
  	env->GetSuccessors(openClosedList.Lookup(nodeID).data, succ);
-	double parentH = openClosedList.Lookup(nodeID).h;
-	
+	double parentH;
+	{
+		const auto& parent = openClosedList.Lookup(nodeID);
+		parentH = parent.h;
+		counts[{parent.g , parent.g + parent.h}]++;
+	}
+
 	// load all the children and push parent heuristic value to children
 	for (unsigned int x = 0; x < succ.size(); x++)
 	{
@@ -518,7 +526,7 @@ void TemplateAStar<state, action,environment,openList>::FullBPMX(uint64_t nodeID
 		dataLocation loc = openClosedList.Lookup(env->GetStateHash(succ[x]), theID);
 		double edgeCost = env->GCost(openClosedList.Lookup(nodeID).data, succ[x]);
 		double newHCost = parentH-edgeCost;
-		
+
 		switch (loc)
 		{
 			case kClosedList:
@@ -544,10 +552,10 @@ void TemplateAStar<state, action,environment,openList>::FullBPMX(uint64_t nodeID
 
 
 /**
- * Get the path from a goal state to the start state 
+ * Get the path from a goal state to the start state
  * @author Nathan Sturtevant
  * @date 03/22/06
- * 
+ *
  * @param goalNode the goal state
  * @param thePath will contain the path from goalNode to the start state
  */
@@ -587,7 +595,7 @@ uint64_t TemplateAStar<state, action,environment,openList>::GetNecessaryExpansio
 
 /**
  * A function that prints the number of states in the closed list and open
- * queue. 
+ * queue.
  * @author Nathan Sturtevant
  * @date 03/22/06
  */
@@ -602,7 +610,7 @@ void TemplateAStar<state, action,environment,openList>::PrintStats()
  * Return the amount of memory used by TemplateAStar
  * @author Nathan Sturtevant
  * @date 03/22/06
- * 
+ *
  * @return The combined number of elements in the closed list and open queue
  */
 template <class state, class action, class environment, class openList>
@@ -615,7 +623,7 @@ int TemplateAStar<state, action,environment,openList>::GetMemoryUsage()
  * Get state from the closed list
  * @author Nathan Sturtevant
  * @date 10/09/07
- * 
+ *
  * @param val The state to lookup in the closed list
  * @gCost The g-cost of the node in the closed list
  * @return success Whether we found the value or not
@@ -666,7 +674,7 @@ bool TemplateAStar<state, action,environment,openList>::GetClosedItem(const stat
  * Draw the open/closed list
  * @author Nathan Sturtevant
  * @date 03/12/09
- * 
+ *
  */
 template <class state, class action, class environment, class openList>
 void TemplateAStar<state, action,environment,openList>::OpenGLDraw() const
@@ -702,7 +710,7 @@ void TemplateAStar<state, action,environment,openList>::OpenGLDraw() const
 			env->SetColor(0.0, 0.5, 0.5, transparency);
 			env->OpenGLDraw(data.data);
 		}
-		else if (data.where == kOpenList) 
+		else if (data.where == kOpenList)
 		{
 			env->SetColor(0.0, 1.0, 0.0, transparency);
 			env->OpenGLDraw(data.data);
@@ -799,7 +807,7 @@ std::string TemplateAStar<state, action,environment,openList>::SVGDraw() const
 	if (openClosedList.size() == 0)
 		return s;
 	uint64_t top = -1;
-	
+
 	if (openClosedList.OpenSize() > 0)
 	{
 		top = openClosedList.Peek();
@@ -807,7 +815,7 @@ std::string TemplateAStar<state, action,environment,openList>::SVGDraw() const
 	for (unsigned int x = 0; x < openClosedList.size(); x++)
 	{
 		const auto &data = openClosedList.Lookat(x);
-		
+
 		if (x == top)
 		{
 			env->SetColor(1.0, 1.0, 0.0, transparency);
@@ -845,7 +853,7 @@ std::string TemplateAStar<state, action,environment,openList>::SVGDrawDetailed()
 	if (openClosedList.size() == 0)
 		return s;
 	uint64_t top = -1;
-	
+
 	if (openClosedList.OpenSize() > 0)
 	{
 		top = openClosedList.Peek();
@@ -853,7 +861,7 @@ std::string TemplateAStar<state, action,environment,openList>::SVGDrawDetailed()
 	for (unsigned int x = 0; x < openClosedList.size(); x++)
 	{
 		const auto &data = openClosedList.Lookat(x);
-		
+
 //		if (x == top)
 //		{
 //			env->SetColor(1.0, 1.0, 0.0, transparency);

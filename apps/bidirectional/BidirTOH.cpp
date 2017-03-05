@@ -20,15 +20,15 @@ Heuristic<TOHState<numDisks>> *BuildPDB(const TOHState<numDisks> &goal)
 	TOH<pdb2Disks> absToh2;
 	TOHState<pdb1Disks> absTohState1;
 	TOHState<pdb2Disks> absTohState2;
-	
-	
+
+
 	TOHPDB<pdb1Disks, numDisks, pdb2Disks> *pdb1 = new TOHPDB<pdb1Disks, numDisks, pdb2Disks>(&absToh1, goal); // top disks
 	TOHPDB<pdb2Disks, numDisks> *pdb2 = new TOHPDB<pdb2Disks, numDisks>(&absToh2, goal); // bottom disks
 	pdb1->BuildPDB(goal, std::thread::hardware_concurrency());
 	pdb2->BuildPDB(goal, std::thread::hardware_concurrency());
-	
+
 	Heuristic<TOHState<numDisks>> *h = new Heuristic<TOHState<numDisks>>;
-	
+
 	h->lookups.resize(0);
 	h->lookups.push_back({kAddNode, 1, 2});
 	h->lookups.push_back({kLeafNode, 0, 0});
@@ -57,7 +57,7 @@ void TestTOH(int first, int last)
 
 	g.Reset();
 	f = BuildPDB<N, pdb1Disks>(g);
-	
+
 	int table[] = {52058078,116173544,208694125,131936966,141559500,133800745,194246206,50028346,167007978,207116816,163867037,119897198,201847476,210859515,117688410,121633885};
 	int table2[] = {145008714,165971878,154717942,218927374,182772845,5808407,19155194,137438954,13143598,124513215,132635260,39667704,2462244,41006424,214146208,54305743};
 	for (int count = first; count < last; count++)
@@ -76,10 +76,10 @@ void TestTOH(int first, int last)
 		g.Reset();
 		std::cout << g << "\n";
 		Timer timer;
-	
+
 		b = BuildPDB<N, pdb1Disks>(s);
 		printf("Starting heuristics: %f %f\n", f->HCost(s, g), b->HCost(g, s));
-		
+
 		if (1)
 		{
 			printf("-=-=-BDS-=-=-\n");
@@ -106,6 +106,17 @@ void TestTOH(int first, int last)
 			astar.SetHeuristic(f);
 			timer.StartTimer();
 			astar.GetPath(&toh, s, g, thePath);
+			timer.EndTimer();
+			printf("I%d-%d-%d\t%d\t", N, pdb1Disks, count, (int)toh.GetPathLength(thePath));
+			printf("%llu nodes\t%llu necessary\t", astar.GetNodesExpanded(), astar.GetNecessaryExpansions());
+			printf("%1.2fs elapsed\n", timer.GetElapsedTime());
+		}
+		if (1)
+		{
+			printf("-=-=-A* (reverse)-=-=-\n");
+			astar.SetHeuristic(b);
+			timer.StartTimer();
+			astar.GetPath(&toh, g, s, thePath);
 			timer.EndTimer();
 			printf("I%d-%d-%d\t%d\t", N, pdb1Disks, count, (int)toh.GetPathLength(thePath));
 			printf("%llu nodes\t%llu necessary\t", astar.GetNodesExpanded(), astar.GetNecessaryExpansions());
@@ -142,7 +153,7 @@ void TOHTest()
 //	const int pdb2Disks = 6;
 //	TOH<numDisks> toh;
 //	TOHState<numDisks> s, g;
-//	
+//
 //	TOHState<numDisks> goal;
 //	TOH<pdb1Disks> absToh1;
 //	TOH<pdb2Disks> absToh2;
@@ -153,11 +164,11 @@ void TOHTest()
 //	TOHPDB<pdb2Disks, numDisks> pdb2(&absToh2); // bottom disks
 //
 //	ZeroHeuristic<TOHState<numDisks>> z;
-//	
+//
 //	goal.Reset();
 //	pdb1.BuildPDB(goal, std::thread::hardware_concurrency());
 //	pdb2.BuildPDB(goal, std::thread::hardware_concurrency());
-//	
+//
 ////	s.Reset();
 ////	goal.Reset();
 ////	for (int x = 0; x < 100; x++)
@@ -175,7 +186,7 @@ void TOHTest()
 ////	exit(0);
 //	goal.Reset();
 //	Heuristic<TOHState<numDisks>> h;
-//	
+//
 //	h.lookups.resize(0);
 //	h.lookups.push_back({kAddNode, 1, 2});
 //	h.lookups.push_back({kLeafNode, 0, 0});
