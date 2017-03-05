@@ -11,6 +11,7 @@
 
 #include "AStarOpenClosed.h"
 #include "FPUtil.h"
+#include "PairHash.h"
 #include "Timer.h"
 #include <unordered_map>
 
@@ -31,16 +32,6 @@ struct MMCompare {
 	}
 };
 
-namespace std {
-	template <> struct hash<std::pair<double, double>>
-	{
-		size_t operator()(const std::pair<double, double> & x) const
-		{
-			return std::hash<double>()(x.first)^(std::hash<double>()(x.second)<<16);
-		}
-	};
-}
-
 
 template <class state, class action, class environment, class priorityQueue = AStarOpenClosed<state, MMCompare<state>> >
 class MM {
@@ -52,11 +43,11 @@ public:
 	bool InitializeSearch(environment *env, const state& from, const state& to,
 						  Heuristic<state> *forward, Heuristic<state> *backward, std::vector<state> &thePath);
 	bool DoSingleSearchStep(std::vector<state> &thePath);
-	
+
 	virtual const char *GetName() { return "MM"; }
-	
+
 	void ResetNodeCount() { nodesExpanded = nodesTouched = uniqueNodesExpanded = 0; }
-	
+
 //	bool GetClosedListGCost(const state &val, double &gCost) const;
 //	unsigned int GetNumOpenItems() { return openClosedList.OpenSize(); }
 //	inline const AStarOpenClosedData<state> &GetOpenItem(unsigned int which) { return openClosedList.Lookat(openClosedList.GetOpenItem(which)); }
@@ -66,16 +57,16 @@ public:
 	inline const AStarOpenClosedData<state> &GetBackwardItem(unsigned int which) { return backwardQueue.Lookat(which); }
 //	bool HaveExpandedState(const state &val)
 //	{ uint64_t key; return openClosedList.Lookup(env->GetStateHash(val), key) != kNotFound; }
-//	
+//
 //	void SetForwardHeuristic(Heuristic<state> *h) { forwardHeuristic = h; }
 //	void SetBackwardHeuristic(Heuristic<state> *h) { backwardHeuristic = h; }
-	
+
 	uint64_t GetUniqueNodesExpanded() const { return uniqueNodesExpanded; }
 	uint64_t GetNodesExpanded() const { return nodesExpanded; }
 	uint64_t GetNodesTouched() const { return nodesTouched; }
 	uint64_t GetNecessaryExpansions() const;
 	//void FullBPMX(uint64_t nodeID, int distance);
-	
+
 	void OpenGLDraw() const;
 	void PrintHDist()
 	{
@@ -114,7 +105,7 @@ public:
 
 //	void SetWeight(double w) {weight = w;}
 private:
-	
+
 	void ExtractPathToGoal(state &node, std::vector<state> &thePath)
 	{ uint64_t theID; backwardQueue.Lookup(env->GetStateHash(node), theID); ExtractPathToGoalFromID(theID, thePath); }
 	void ExtractPathToGoalFromID(uint64_t node, std::vector<state> &thePath)
@@ -138,7 +129,7 @@ private:
 	}
 
 	void OpenGLDraw(const priorityQueue &queue) const;
-	
+
 	void Expand(priorityQueue &current,
 				priorityQueue &opposite,
 				Heuristic<state> *heuristic,
@@ -214,18 +205,18 @@ bool MM<state, action, environment, priorityQueue>::DoSingleSearchStep(std::vect
 	{
 		return true;
 	}
-	
+
 //	if (forwardQueue.OpenSize() == 0)
 //		//Expand(backwardQueue, forwardQueue, backwardHeuristic, start, g_b, f_b);
 //		Expand(backwardQueue, forwardQueue, backwardHeuristic, start, b);
-//	
+//
 //	if (backwardQueue.OpenSize() == 0)
 //		//Expand(forwardQueue, backwardQueue, forwardHeuristic, goal, g_f, f_f);
 //		Expand(forwardQueue, backwardQueue, forwardHeuristic, goal, f);
 
 	uint64_t forward = forwardQueue.Peek();
 	uint64_t backward = backwardQueue.Peek();
-	
+
 	const AStarOpenClosedData<state> &nextForward = forwardQueue.Lookat(forward);
 	const AStarOpenClosedData<state> &nextBackward = backwardQueue.Lookat(backward);
 
@@ -243,7 +234,7 @@ bool MM<state, action, environment, priorityQueue>::DoSingleSearchStep(std::vect
 		oldp2 = p2;
 		//PrintOpenStats(b);
 	}
-	
+
 	if (fless(p1, p2))
 	{
 		//Expand(forwardQueue, backwardQueue, forwardHeuristic, goal, g_f, f_f);
@@ -281,7 +272,7 @@ bool MM<state, action, environment, priorityQueue>::DoSingleSearchStep(std::vect
 		double minBackwardF =  DBL_MAX;
 		double forwardP;
 		double backwardP;
-		
+
 		for (auto i = f.begin(); i != f.end(); i++)
 		{
 			if (i->second > 0) // some elements
@@ -306,7 +297,7 @@ bool MM<state, action, environment, priorityQueue>::DoSingleSearchStep(std::vect
 				}
 			}
 		}
-		
+
 		{
 			auto iB = backwardQueue.Lookat(backwardQueue.Peek());
 			backwardP = std::max(iB.g+iB.h, iB.g*2);
@@ -354,14 +345,14 @@ bool MM<state, action, environment, priorityQueue>::DoSingleSearchStep(std::vect
 		{
 //			PrintOpenStats(f);
 //			PrintOpenStats(b);
-			
+
 			std::vector<state> pFor, pBack;
 			ExtractPathToGoal(middleNode, pBack);
 			ExtractPathToStart(middleNode, pFor);
 			reverse(pFor.begin(), pFor.end());
 			thePath = pFor;
 			thePath.insert( thePath.end(), pBack.begin()+1, pBack.end() );
-			
+
 			return true;
 		}
 	}
@@ -439,8 +430,8 @@ void MM<state, action, environment, priorityQueue>::Expand(priorityQueue &curren
 					current.KeyChanged(childID);
 					count[{childData.g,childData.h}]++;
 					dist[{childData.g,childData.h}]++;
-					
-					
+
+
 					// TODO: check if we improved the current solution?
 					uint64_t reverseLoc;
 					auto loc = opposite.Lookup(hash, reverseLoc);
@@ -483,7 +474,7 @@ void MM<state, action, environment, priorityQueue>::Expand(priorityQueue &curren
 									g,
 									h,
 									nextID);
-				
+
 				// check for solution
 				uint64_t reverseLoc;
 				auto loc = opposite.Lookup(hash, reverseLoc);
