@@ -117,7 +117,7 @@ MNPuzzleState<4, 4> GetKorfInstance(int which)
 		{0, 11, 3, 12, 5, 2, 1, 9, 8, 10, 14, 15, 7, 4, 13, 6},
 		{7, 15, 4, 0, 10, 9, 2, 5, 12, 11, 13, 6, 1, 3, 14, 8},
 		{11, 4, 0, 8, 6, 10, 5, 13, 12, 7, 14, 3, 1, 2, 9, 15}};
-	
+
 	MNPuzzleState<4, 4> s;
 	for (int x = 0; x < 16; x++)
 	{
@@ -128,78 +128,82 @@ MNPuzzleState<4, 4> GetKorfInstance(int which)
 	return s;
 }
 
+void printCounts(const std::unordered_map<std::pair<double, double>, uint64_t>& counts, float dist);
+
 void TestSTP(int algorithm)
 {
 	NBS<MNPuzzleState<4, 4>, slideDir, MNPuzzle<4,4>> nbs;
 	MM<MNPuzzleState<4, 4>, slideDir, MNPuzzle<4,4>> mm;
-	BSStar<MNPuzzleState<4, 4>, slideDir, MNPuzzle<4,4>> bs;
-	TemplateAStar<MNPuzzleState<4, 4>, slideDir, MNPuzzle<4,4>> astar;
 	MNPuzzle<4,4> mnp;
-	
+	std::vector<MNPuzzleState<4, 4>> thePath;
+
 	for (int x = 0; x < 100; x++) // 547 to 540
 	{
-		
+
 		MNPuzzleState<4, 4> start, goal;
 		printf("Problem %d of %d\n", x+1, 100);
-		
+
 		std::vector<MNPuzzleState<4,4>> nbsPath;
 		std::vector<MNPuzzleState<4,4>> astarPath;
-		Timer t1, t2;
-		
-		
-		if (algorithm == 0) // A*
+		Timer timer;
+
+
+		goal.Reset();
+		start = GetKorfInstance(x);
+		// if (1) // A*
+		// {
+			// TemplateAStar<MNPuzzleState<4, 4>, slideDir, MNPuzzle<4,4>> astar;
+			// printf("-=-=-A*-=-=-\n");
+			// timer.StartTimer();
+			// astar.GetPath(&mnp, start, goal, astarPath);
+			// timer.EndTimer();
+			// printf("%llu nodes\t%llu necessary\t", astar.GetNodesExpanded(), astar.GetNecessaryExpansions());
+			// printf("%1.2fs elapsed\n", timer.GetElapsedTime());
+			// printCounts(astar.GetCounts(), mnp.GetPathLength(thePath));
+		// }
+		if (1) // A*
 		{
-			goal.Reset();
-			start = GetKorfInstance(x);
-			t1.StartTimer();
-			astar.GetPath(&mnp, start, goal, astarPath);
-			t1.EndTimer();
-			printf("A* found path length %1.0f; %llu expanded; %llu necessary; %llu generated; %1.2fs elapsed\n", mnp.GetPathLength(astarPath),
-				   astar.GetNodesExpanded(), astar.GetNecessaryExpansions(), astar.GetNodesTouched(), t1.GetElapsedTime());
+			TemplateAStar<MNPuzzleState<4, 4>, slideDir, MNPuzzle<4,4>> astar;
+			printf("-=-=-A* (reverse)-=-=-\n");
+			timer.StartTimer();
+			astar.GetPath(&mnp, goal, start, astarPath);
+			timer.EndTimer();
+			printf("%llu nodes\t%llu necessary\t", astar.GetNodesExpanded(), astar.GetNecessaryExpansions());
+			printf("%1.2fs elapsed\n", timer.GetElapsedTime());
+			printCounts(astar.GetCounts(), mnp.GetPathLength(thePath));
 		}
-		if (algorithm == 1) // BS*
+		if (1) // BS*
 		{
-			goal.Reset();
-			start = GetKorfInstance(x);
-			t2.StartTimer();
+			BSStar<MNPuzzleState<4, 4>, slideDir, MNPuzzle<4,4>> bs;
+			printf("-=-=-BS*-=-=-\n");
+			timer.StartTimer();
 			bs.GetPath(&mnp, start, goal, &mnp, &mnp, nbsPath);
-			t2.EndTimer();
-			printf("BS* found path length %1.0f; %llu expanded; %llu necessary; %llu generated; %1.2fs elapsed\n", mnp.GetPathLength(nbsPath),
-				   bs.GetNodesExpanded(), bs.GetNecessaryExpansions(), bs.GetNodesTouched(), t2.GetElapsedTime());
+			timer.EndTimer();
+			printf("%llu nodes\t%llu necessary\t", bs.GetNodesExpanded(), bs.GetNecessaryExpansions());
+			printf("%1.2fs elapsed\n", timer.GetElapsedTime());
+			printCounts(bs.GetCounts(), mnp.GetPathLength(thePath));
 		}
-		if (algorithm == 2) // MM
-		{
-			goal.Reset();
-			start = GetKorfInstance(x);
-			t2.StartTimer();
-			mm.GetPath(&mnp, start, goal, &mnp, &mnp, nbsPath);
-			t2.EndTimer();
-			printf("MM found path length %1.0f; %llu expanded; %llu necessary; %llu generated; %1.2fs elapsed\n", mnp.GetPathLength(nbsPath),
-				   mm.GetNodesExpanded(), mm.GetNecessaryExpansions(), mm.GetNodesTouched(), t2.GetElapsedTime());
-		}
-		if (algorithm == 3) // NBS
-		{
-			goal.Reset();
-			start = GetKorfInstance(x);
-			t2.StartTimer();
-			nbs.GetPath(&mnp, start, goal, &mnp, &mnp, nbsPath);
-			t2.EndTimer();
-			printf("NBS found path length %1.0f; %llu expanded; %llu necessary; %llu generated; %1.2fs elapsed\n", mnp.GetPathLength(nbsPath),
-				   nbs.GetNodesExpanded(), nbs.GetNecessaryExpansions(), nbs.GetNodesTouched(), t2.GetElapsedTime());
-		}
-		if (algorithm == 4) // MM0
-		{
-			ZeroHeuristic<MNPuzzleState<4,4>> z;
-			goal.Reset();
-			start = GetKorfInstance(x);
-			t2.StartTimer();
-			mm.GetPath(&mnp, start, goal, &z, &z, nbsPath);
-			t2.EndTimer();
-			printf("MM found path length %1.0f; %llu expanded; %llu necessary; %llu generated; %1.2fs elapsed\n", mnp.GetPathLength(nbsPath),
-				   mm.GetNodesExpanded(), mm.GetNecessaryExpansions(), mm.GetNodesTouched(), t2.GetElapsedTime());
-		}
-		
-//		
+		// if (1) // MM
+		// {
+			// goal.Reset();
+			// start = GetKorfInstance(x);
+			// t2.StartTimer();
+			// mm.GetPath(&mnp, start, goal, &mnp, &mnp, nbsPath);
+			// t2.EndTimer();
+			// printf("MM found path length %1.0f; %llu expanded; %llu necessary; %llu generated; %1.2fs elapsed\n", mnp.GetPathLength(nbsPath),
+				   // mm.GetNodesExpanded(), mm.GetNecessaryExpansions(), mm.GetNodesTouched(), t2.GetElapsedTime());
+		// }
+		// if (1) // NBS
+		// {
+			// goal.Reset();
+			// start = GetKorfInstance(x);
+			// t2.StartTimer();
+			// nbs.GetPath(&mnp, start, goal, &mnp, &mnp, nbsPath);
+			// t2.EndTimer();
+			// printf("NBS found path length %1.0f; %llu expanded; %llu necessary; %llu generated; %1.2fs elapsed\n", mnp.GetPathLength(nbsPath),
+				   // nbs.GetNodesExpanded(), nbs.GetNecessaryExpansions(), nbs.GetNodesTouched(), t2.GetElapsedTime());
+		// }
+//
 //		std::cout << astar.GetNodesExpanded() << "\t" << nbs.GetNodesExpanded() << "\t";
 //		std::cout << t1.GetElapsedTime() << "\t" <<  t2.GetElapsedTime() << "\n";
 	}
@@ -217,16 +221,16 @@ void TestSTPFull()
 
 	for (int x = 0; x < 100; x++) // 547 to 540
 	{
-		
+
 		MNPuzzleState<4, 4> start, goal;
 		printf("Problem %d of %d\n", x+1, 100);
-		
+
 		std::vector<slideDir> idaPath;
 		std::vector<MNPuzzleState<4,4>> nbsPath;
 		std::vector<MNPuzzleState<4,4>> astarPath;
 		std::vector<MNPuzzleState<4,4>> mmPath;
 		Timer t1, t2, t3, t4;
-		
+
 		goal.Reset();
 		start = GetKorfInstance(x);
 		t1.StartTimer();
@@ -258,7 +262,7 @@ void TestSTPFull()
 
 		std::cout << ida.GetNodesExpanded() << "\t" <<  astar.GetNodesExpanded() << "\t" << nbs.GetNodesExpanded() << "\t";
 		std::cout << t1.GetElapsedTime() << "\t" <<  t2.GetElapsedTime() << "\t" << t3.GetElapsedTime() << "\n";
-		
+
 		//if (!fequal)
 		if (nbsPath.size() != idaPath.size()+1)
 		{
@@ -280,7 +284,7 @@ void TestSTPFull()
 //			}
 			exit(0);
 		}
-		
+
 	}
 	exit(0);
 }

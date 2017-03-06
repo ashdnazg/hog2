@@ -113,6 +113,11 @@ static bool operator==(const TOHState<D> &l1, const TOHState<D> &l2) {
 	return true;
 }
 
+template <int D>
+static bool operator!=(const TOHState<D> &l1, const TOHState<D> &l2) {
+	return !(l1 == l2);
+}
+
 static std::ostream &operator<<(std::ostream &out, const TOHMove &m)
 {
 	out << "(" << +m.source << ", " << +m.dest << ")";

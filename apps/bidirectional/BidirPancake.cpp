@@ -18,6 +18,7 @@ const int S = 10; // must be factor of sizes below
 
 void TestPancakeTR();
 void TestPancakeRandom();
+void printCounts(const std::unordered_map<std::pair<double, double>, uint64_t>& counts, float dist);
 
 void TestPancake()
 {
@@ -33,24 +34,24 @@ void TestPancakeTR()
 
 	for (int gap = 0; gap < 10; gap++)
 	{
-		
+
 		PancakePuzzleState<S> start;
 		PancakePuzzleState<S> goal;
 		PancakePuzzle<S> pancake(gap);
 		PancakePuzzle<S> pancake2(gap);
-		
+
 		NBS<PancakePuzzleState<S>, PancakePuzzleAction, PancakePuzzle<S>> nbs;
 		MM<PancakePuzzleState<S>, PancakePuzzleAction, PancakePuzzle<S>> mm;
 		TemplateAStar<PancakePuzzleState<S>, PancakePuzzleAction, PancakePuzzle<S>> astar;
 		IDAStar<PancakePuzzleState<S>, PancakePuzzleAction, false> idastar;
-		
+
 		std::vector<PancakePuzzleState<S>> nbsPath;
 		std::vector<PancakePuzzleState<S>> astarPath;
 		std::vector<PancakePuzzleState<S>> mmPath;
 		std::vector<PancakePuzzleAction> idaPath;
 		Timer t1, t2, t3, t4;
-		
-		
+
+
 		goal.Reset();
 		for (int x = 0; x < S; x++)
 			start.puzzle[x] = arrangement[x];
@@ -67,7 +68,7 @@ void TestPancakeTR()
 		}
 		printf("A* found path length %1.0f; %llu expanded; %llu necessary; %1.2fs elapsed\n", pancake.GetPathLength(astarPath),
 			   astar.GetNodesExpanded(), necessary, t1.GetElapsedTime());
-		
+
 		goal.Reset();
 		for (int x = 0; x < S; x++)
 			start.puzzle[x] = arrangement[x];
@@ -76,7 +77,7 @@ void TestPancakeTR()
 		t2.EndTimer();
 		printf("NBS found path length %1.0f; %llu expanded; %llu necessary; %1.2fs elapsed\n", pancake.GetPathLength(nbsPath),
 			   nbs.GetNodesExpanded(), nbs.GetNecessaryExpansions(), t2.GetElapsedTime());
-		
+
 		goal.Reset();
 		for (int x = 0; x < S; x++)
 			start.puzzle[x] = arrangement[x];
@@ -85,8 +86,8 @@ void TestPancakeTR()
 		t3.EndTimer();
 		printf("IDA* found path length %ld; %llu expanded; %llu generated; %1.2fs elapsed\n", idaPath.size(),
 			   idastar.GetNodesExpanded(), idastar.GetNodesTouched(), t3.GetElapsedTime());
-		
-		
+
+
 		goal.Reset();
 		for (int x = 0; x < S; x++)
 			start.puzzle[x] = arrangement[x];
@@ -95,7 +96,7 @@ void TestPancakeTR()
 		t4.EndTimer();
 		printf("MM found path length %1.0f; %llu expanded; %1.2fs elapsed\n", pancake.GetPathLength(mmPath),
 			   mm.GetNodesExpanded(), t4.GetElapsedTime());
-		
+
 		printf("Problem & IDA* & & A* & & MM & & NBS* & \\\\\n");
 		printf("%d G-%d & %llu & %1.2fs & %llu & %1.2fs & %llu & %1.2fs & %llu & %1.2fs \\\\ \n", S, gap,
 			   idastar.GetNodesExpanded(), t3.GetElapsedTime(),
@@ -109,7 +110,7 @@ void TestPancakeTR()
 const int N = 16;
 void TestPancakeRandom()
 {
-	for (int gap = 0; gap < 4; gap++)
+	for (int gap = 0; gap < 2; gap++)
 	{
 		srandom(2017218);
 		PancakePuzzleState<N> start;
@@ -117,98 +118,96 @@ void TestPancakeRandom()
 		PancakePuzzleState<N> goal;
 		PancakePuzzle<N> pancake(gap);
 		PancakePuzzle<N> pancake2(gap);
-		
-		
-		std::vector<PancakePuzzleState<N>> nbsPath;
-		std::vector<PancakePuzzleState<N>> bsPath;
-		std::vector<PancakePuzzleState<N>> astarPath;
-		std::vector<PancakePuzzleState<N>> mmPath;
-		std::vector<PancakePuzzleAction> idaPath;
+
+
+		std::vector<PancakePuzzleState<N>> thePath;
 		Timer t1, t2, t3, t4, t5;
-		
+
 		for (int count = 0; count < 50; count++)
 		{
 			srandom(random());
-			
+
 			goal.Reset();
 			original.Reset();
 			for (int x = 0; x < N; x++)
 				std::swap(original.puzzle[x], original.puzzle[x+random()%(N-x)]);
-			
+
 			printf("Problem %d of %d\n", count+1, 50);
 			std::cout << original << "\n";
-			
+
 			// A*
 			{
 				TemplateAStar<PancakePuzzleState<N>, PancakePuzzleAction, PancakePuzzle<N>> astar;
+				printf("-=-=-A*-=-=-\n");
+				goal.Reset();
 				start = original;
 				t1.StartTimer();
-				astar.GetPath(&pancake, start, goal, astarPath);
+				astar.GetPath(&pancake, start, goal, thePath);
 				t1.EndTimer();
-				printf("GAP-%d A* found path length %1.0f; %llu expanded; %llu necessary; %1.2fs elapsed\n", gap, pancake.GetPathLength(astarPath),
-					   astar.GetNodesExpanded(), astar.GetNecessaryExpansions(), t1.GetElapsedTime());
+				printf("I%d-%d-%d\t%d\t", N, 0, count, (int)pancake.GetPathLength(thePath));
+				printf("%llu nodes\t%llu necessary\t", astar.GetNodesExpanded(), astar.GetNecessaryExpansions());
+				printf("%1.2fs elapsed\n", t1.GetElapsedTime());
+				printCounts(astar.GetCounts(), pancake.GetPathLength(thePath));
 			}
-			
+
+			// A* (reverse)
+			{
+				TemplateAStar<PancakePuzzleState<N>, PancakePuzzleAction, PancakePuzzle<N>> astar;
+				printf("-=-=-A* (reverse)-=-=-\n");
+				goal.Reset();
+				start = original;
+				t1.StartTimer();
+				astar.GetPath(&pancake, goal, start, thePath);
+				t1.EndTimer();
+				printf("I%d-%d-%d\t%d\t", N, 0, count, (int)pancake.GetPathLength(thePath));
+				printf("%llu nodes\t%llu necessary\t", astar.GetNodesExpanded(), astar.GetNecessaryExpansions());
+				printf("%1.2fs elapsed\n", t1.GetElapsedTime());
+				printCounts(astar.GetCounts(), pancake.GetPathLength(thePath));
+			}
+
 			// NBS
 			{
 				NBS<PancakePuzzleState<N>, PancakePuzzleAction, PancakePuzzle<N>> nbs;
+				printf("-=-=-BDS-=-=-\n");
 				goal.Reset();
 				start = original;
 				t2.StartTimer();
-				nbs.GetPath(&pancake, start, goal, &pancake, &pancake2, nbsPath);
+				nbs.GetPath(&pancake, start, goal, &pancake, &pancake2, thePath);
 				t2.EndTimer();
-				printf("GAP-%d NBS found path length %1.0f; %llu expanded; %llu necessary; %1.2fs elapsed\n", gap, pancake.GetPathLength(nbsPath),
-					   nbs.GetNodesExpanded(), nbs.GetNecessaryExpansions(), t2.GetElapsedTime());
+				printf("I%d-%d-%d\t%d\t", N, 0, count, (int)pancake.GetPathLength(thePath));
+				printf("%llu nodes\t%llu necessary\t", nbs.GetNodesExpanded(), nbs.GetNecessaryExpansions());
+				printf("%1.2fs elapsed\n", t2.GetElapsedTime());
+				printCounts(nbs.GetCounts(), pancake.GetPathLength(thePath));
 			}
-			
+
 			// BS*
 			{
 				BSStar<PancakePuzzleState<N>, PancakePuzzleAction, PancakePuzzle<N>> bs;
+				printf("-=-=-BS*-=-=-\n");
 				goal.Reset();
 				start = original;
 				t2.StartTimer();
-				bs.GetPath(&pancake, start, goal, &pancake, &pancake2, bsPath);
+				bs.GetPath(&pancake, start, goal, &pancake, &pancake2, thePath);
 				t2.EndTimer();
-				printf("GAP-%d BS* found path length %1.0f; %llu expanded; %llu necessary; %1.2fs elapsed\n", gap, pancake.GetPathLength(bsPath),
-					   bs.GetNodesExpanded(), bs.GetNecessaryExpansions(), t2.GetElapsedTime());
+				printf("I%d-%d-%d\t%d\t", N, 0, count, (int)pancake.GetPathLength(thePath));
+				printf("%llu nodes\t%llu necessary\t", bs.GetNodesExpanded(), bs.GetNecessaryExpansions());
+				printf("%1.2fs elapsed\n", t2.GetElapsedTime());
+				printCounts(bs.GetCounts(), pancake.GetPathLength(thePath));
 			}
-			
-			// IDA*
-			{
-				IDAStar<PancakePuzzleState<N>, PancakePuzzleAction, false> idastar;
-				goal.Reset();
-				start = original;
-				t3.StartTimer();
-				idastar.GetPath(&pancake, start, goal, idaPath);
-				t3.EndTimer();
-				printf("GAP-%d IDA* found path length %ld; %llu expanded; %llu generated; %1.2fs elapsed\n", gap, idaPath.size(),
-					   idastar.GetNodesExpanded(), idastar.GetNodesTouched(), t3.GetElapsedTime());
-			}
-			
+
 			// MM
 			{
 				MM<PancakePuzzleState<N>, PancakePuzzleAction, PancakePuzzle<N>> mm;
+				printf("-=-=-MM-=-=-\n");
 				goal.Reset();
 				start = original;
 				t4.StartTimer();
-				mm.GetPath(&pancake, start, goal, &pancake, &pancake2, mmPath);
+				mm.GetPath(&pancake, start, goal, &pancake, &pancake2, thePath);
 				t4.EndTimer();
-				printf("GAP-%d MM found path length %1.0f; %llu expanded; %llu necessary; %1.2fs elapsed\n", gap, pancake.GetPathLength(mmPath),
-					   mm.GetNodesExpanded(), mm.GetNecessaryExpansions(), t1.GetElapsedTime());
-			}
-
-			// MM0
-			if (gap == 3)
-			{
-				MM<PancakePuzzleState<N>, PancakePuzzleAction, PancakePuzzle<N>> mm;
-				ZeroHeuristic<PancakePuzzleState<N>> z;
-				goal.Reset();
-				start = original;
-				t4.StartTimer();
-				mm.GetPath(&pancake, start, goal, &z, &z, mmPath);
-				t4.EndTimer();
-				printf("GAP-%d MM0 found path length %1.0f; %llu expanded; %llu necessary; %1.2fs elapsed\n", count, pancake.GetPathLength(mmPath),
-					   mm.GetNodesExpanded(), mm.GetNecessaryExpansions(), t1.GetElapsedTime());
+				printf("I%d-%d-%d\t%d\t", N, 0, count, (int)pancake.GetPathLength(thePath));
+				printf("%llu nodes\t%llu necessary\t", mm.GetNodesExpanded(), mm.GetNecessaryExpansions());
+				printf("%1.2fs elapsed\n", t4.GetElapsedTime());
+				printCounts(mm.GetCounts(), pancake.GetPathLength(thePath));
 			}
 
 		}

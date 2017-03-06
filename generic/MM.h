@@ -15,12 +15,12 @@
 #include "Timer.h"
 #include <unordered_map>
 
-template <class state, int epsilon = 1>
+template <class state, int epsilon = 0>
 struct MMCompare {
 	bool operator()(const AStarOpenClosedData<state> &i1, const AStarOpenClosedData<state> &i2) const
 	{
-		double p1 = std::max(i1.g+i1.h, i1.g*2+epsilon);
-		double p2 = std::max(i2.g+i2.h, i2.g*2+epsilon);
+		double p1 = std::max(i1.g+i1.h, i1.g*2);
+		double p2 = std::max(i2.g+i2.h, i2.g*2);
 //		double p1 = i1.g+i1.h;
 //		double p2 = i2.g+i2.h;
 		if (fequal(p1, p2))
@@ -36,7 +36,7 @@ struct MMCompare {
 template <class state, class action, class environment, class priorityQueue = AStarOpenClosed<state, MMCompare<state>> >
 class MM {
 public:
-	MM(double epsilon = 1.0):epsilon(epsilon) { forwardHeuristic = 0; backwardHeuristic = 0; env = 0; ResetNodeCount(); }
+	MM(double epsilon = 0.0):epsilon(epsilon) { forwardHeuristic = 0; backwardHeuristic = 0; env = 0; ResetNodeCount(); }
 	virtual ~MM() {}
 	void GetPath(environment *env, const state& from, const state& to,
 				 Heuristic<state> *forward, Heuristic<state> *backward, std::vector<state> &thePath);
@@ -64,6 +64,7 @@ public:
 	uint64_t GetUniqueNodesExpanded() const { return uniqueNodesExpanded; }
 	uint64_t GetNodesExpanded() const { return nodesExpanded; }
 	uint64_t GetNodesTouched() const { return nodesTouched; }
+	const std::unordered_map<std::pair<double, double>, uint64_t>& GetCounts() const { return counts; }
 	uint64_t GetNecessaryExpansions() const;
 	//void FullBPMX(uint64_t nodeID, int distance);
 
@@ -141,6 +142,7 @@ private:
 	state goal, start;
 	std::unordered_map<std::pair<double, double>, int> dist;
 	std::unordered_map<std::pair<double, double>, int> f, b;
+	std::unordered_map<std::pair<double, double>, uint64_t> counts;
 	uint64_t nodesTouched, nodesExpanded, uniqueNodesExpanded;
 	state middleNode;
 	double currentCost;
@@ -323,7 +325,7 @@ bool MM<state, action, environment, priorityQueue>::DoSingleSearchStep(std::vect
 //			printf("Terminated on backwardf (%f >= %f)\n", minBackwardF, currentCost);
 			done = true;
 		}
-		if (!fgreater(currentCost, minForwardG+minBackwardG+epsilon)) // TODO: epsilon
+		if (!fgreater(currentCost, minForwardG+minBackwardG)) // TODO: epsilon
 		{
 //			printf("Terminated on g+g+epsilon (%f+%f+%f >= %f)\n", minForwardG, minBackwardG, epsilon, currentCost);
 			done = true;
@@ -368,13 +370,16 @@ void MM<state, action, environment, priorityQueue>::Expand(priorityQueue &curren
 //														   std::unordered_map<double, int> &minf)
 {
 	uint64_t nextID = current.Close();
-	nodesExpanded++;
-	if (current.Lookup(nextID).reopened == false)
-		uniqueNodesExpanded++;
 
 	// decrease count from parent
 	{
+		nodesExpanded++;
 		auto &parentData = current.Lookup(nextID);
+		if (!parentData.reopened)
+			uniqueNodesExpanded++;
+
+		counts[{heuristic == forwardHeuristic ? parentData.g : -parentData.g , parentData.g + parentData.h}]++;
+
 		count[{parentData.g,parentData.h}]--;
 		if (count[{parentData.g,parentData.h}] == 0 && currentCost < DBL_MAX)
 		{

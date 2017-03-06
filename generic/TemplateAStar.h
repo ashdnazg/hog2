@@ -124,6 +124,7 @@ public:
 	uint64_t GetNodesExpanded() const { return nodesExpanded; }
 	uint64_t GetNodesTouched() const { return nodesTouched; }
 	uint64_t GetNecessaryExpansions() const;
+	const std::unordered_map<std::pair<double, double>, uint64_t>& GetCounts() const { return counts; }
 	void LogFinalStats(StatCollection *) {}
 
 	void SetRadius(double rad) {radius = rad;}
@@ -144,7 +145,7 @@ public:
 	void SetWeight(double w) {weight = w;}
 private:
 	uint64_t nodesTouched, nodesExpanded;
-	std::unordered_map<std::pair<double, double>, int64_t> counts;
+	std::unordered_map<std::pair<double, double>, uint64_t> counts;
 //	bool GetNextNode(state &next);
 //	//state Node();
 //	void UpdateClosedNode(environment *env, state& currOpenNode, state& neighbor);
@@ -322,9 +323,14 @@ bool TemplateAStar<state,action,environment,openList>::DoSingleSearchStep(std::v
 //	{ lastF = openClosedList.Lookup(nodeid).g+openClosedList.Lookup(nodeid).h;
 //		//printf("Updated limit to %f\n", lastF);
 //	}
-	if (!openClosedList.Lookup(nodeid).reopened)
-		uniqueNodesExpanded++;
-	nodesExpanded++;
+	{
+		const auto &parentData = openClosedList.Lookup(nodeid);
+		if (!parentData.reopened)
+			uniqueNodesExpanded++;
+		nodesExpanded++;
+
+		counts[{parentData.g, parentData.g + parentData.h}]++;
+	}
 
 	if ((stopAfterGoal) && (env->GoalTest(openClosedList.Lookup(nodeid).data, goal)))
 	{
@@ -514,7 +520,7 @@ void TemplateAStar<state, action,environment,openList>::FullBPMX(uint64_t nodeID
  	env->GetSuccessors(openClosedList.Lookup(nodeID).data, succ);
 	double parentH;
 	{
-		const auto& parent = openClosedList.Lookup(nodeID);
+		const auto &parent = openClosedList.Lookup(nodeID);
 		parentH = parent.h;
 		counts[{parent.g , parent.g + parent.h}]++;
 	}
@@ -582,14 +588,13 @@ const state &TemplateAStar<state, action,environment,openList>::GetParent(const 
 template <class state, class action, class environment, class openList>
 uint64_t TemplateAStar<state, action,environment,openList>::GetNecessaryExpansions() const
 {
-	uint64_t n = 0;
-	for (unsigned int x = 0; x < openClosedList.size(); x++)
+	uint64_t necessary = 0;
+	for (const auto &i : counts)
 	{
-		const auto &data = openClosedList.Lookat(x);
-		if (fless(data.g + data.h, goalFCost))
-			n++;
+		if (i.first.second < goalFCost)
+			necessary += i.second;
 	}
-	return n;
+	return necessary;
 }
 
 

@@ -11,6 +11,7 @@
 
 #include "AStarOpenClosed.h"
 #include "FPUtil.h"
+#include "PairHash.h"
 #include "Timer.h"
 #include <unordered_map>
 
@@ -39,23 +40,24 @@ public:
 	bool InitializeSearch(environment *env, const state& from, const state& to,
 						  Heuristic<state> *forward, Heuristic<state> *backward, std::vector<state> &thePath);
 	bool DoSingleSearchStep(std::vector<state> &thePath);
-	
+
 	virtual const char *GetName() { return "MM"; }
-	
-	void ResetNodeCount() { nodesExpanded = nodesTouched = uniqueNodesExpanded = 0; }
-	
+
+	void ResetNodeCount() { nodesExpanded = nodesTouched = uniqueNodesExpanded = 0; counts.clear(); }
+
 	inline const int GetNumForwardItems() { return forwardQueue.size(); }
 	inline const AStarOpenClosedData<state> &GetForwardItem(unsigned int which) { return forwardQueue.Lookat(which); }
 	inline const int GetNumBackwardItems() { return backwardQueue.size(); }
 	inline const AStarOpenClosedData<state> &GetBackwardItem(unsigned int which) { return backwardQueue.Lookat(which); }
-	
+
 	uint64_t GetUniqueNodesExpanded() const { return uniqueNodesExpanded; }
 	uint64_t GetNodesExpanded() const { return nodesExpanded; }
 	uint64_t GetNodesTouched() const { return nodesTouched; }
+	const std::unordered_map<std::pair<double, double>, uint64_t>& GetCounts() const { return counts; }
 	uint64_t GetNecessaryExpansions() const;
 
 	void OpenGLDraw() const;
-	
+
 	//	void SetWeight(double w) {weight = w;}
 private:
 	void Trim();
@@ -71,7 +73,7 @@ private:
 		} while (backwardQueue.Lookup(node).parentID != node);
 		thePath.push_back(backwardQueue.Lookup(node).data);
 	}
-	
+
 	void ExtractPathToStart(state &node, std::vector<state> &thePath)
 	{ uint64_t theID; forwardQueue.Lookup(env->GetStateHash(node), theID); ExtractPathToStartFromID(theID, thePath); }
 	void ExtractPathToStartFromID(uint64_t node, std::vector<state> &thePath)
@@ -82,9 +84,9 @@ private:
 		} while (forwardQueue.Lookup(node).parentID != node);
 		thePath.push_back(forwardQueue.Lookup(node).data);
 	}
-	
+
 	void OpenGLDraw(const priorityQueue &queue) const;
-	
+
 	void Expand(priorityQueue &current,
 				priorityQueue &opposite,
 				Heuristic<state> *heuristic,
@@ -93,19 +95,20 @@ private:
 	state goal, start;
 //	std::unordered_map<std::pair<double, double>, int> dist;
 //	std::unordered_map<std::pair<double, double>, int> f, b;
+	std::unordered_map<std::pair<double, double>, uint64_t> counts;
 	uint64_t nodesTouched, nodesExpanded, uniqueNodesExpanded;
 	state middleNode;
 	double currentCost;
 	double lastMinForwardG;
 	double lastMinBackwardG;
 	double epsilon;
-	
+
 	std::vector<state> neighbors;
 	environment *env;
 	Timer t;
 	Heuristic<state> *forwardHeuristic;
 	Heuristic<state> *backwardHeuristic;
-	
+
 	double oldp1;
 	double oldp2;
 };
@@ -162,7 +165,7 @@ bool BSStar<state, action, environment, priorityQueue>::DoSingleSearchStep(std::
 		}
 		return true;
 	}
-	
+
 	if (forwardQueue.OpenSize() > backwardQueue.OpenSize())
 		Expand(backwardQueue, forwardQueue, backwardHeuristic, start);
 	else
@@ -176,7 +179,7 @@ void BSStar<state, action, environment, priorityQueue>::Expand(priorityQueue &cu
 														   Heuristic<state> *heuristic, const state &target)
 {
 	uint64_t nextID;
-	
+
 	bool success = false;
 	while (current.OpenSize() > 0) {
 		nextID = current.Close();
@@ -196,17 +199,22 @@ void BSStar<state, action, environment, priorityQueue>::Expand(priorityQueue &cu
 	}
 	if (!success)
 		return;
-	
+
 	// 2. Else expand as usual on current direction
 	// 2a. Check for bidirectional solution
 	// 2b. Set trim flag
-	
+
 	// 3. If trim, remove any states with f >= best solution from open (Except start/goal?)
 
 	bool foundBetterSolution = false;
-	nodesExpanded++;
-	if (current.Lookup(nextID).reopened == false)
-		uniqueNodesExpanded++;
+	{
+		const auto& parentData = current.Lookup(nextID);
+		nodesExpanded++;
+		if (parentData.reopened == false)
+			uniqueNodesExpanded++;
+
+		counts[{heuristic == forwardHeuristic ? parentData.g : -parentData.g, parentData.g + parentData.h}]++;
+	}
 
 	env->GetSuccessors(current.Lookup(nextID).data, neighbors);
 	for (auto &succ : neighbors)
@@ -217,13 +225,13 @@ void BSStar<state, action, environment, priorityQueue>::Expand(priorityQueue &cu
 		auto loc = current.Lookup(hash, childID);
 		auto &childData = current.Lookup(childID);
 		auto &parentData = current.Lookup(nextID);
-		
+
 		double edgeCost = env->GCost(parentData.data, succ);
 
 		// ignore states with greater cost than best solution
 		if (fgreatereq(parentData.g+edgeCost, currentCost))
 			continue;
-		
+
 		switch (loc)
 		{
 			case kClosedList: // ignore
@@ -242,8 +250,8 @@ void BSStar<state, action, environment, priorityQueue>::Expand(priorityQueue &cu
 					childData.parentID = nextID;
 					childData.g = parentData.g+edgeCost;
 					current.KeyChanged(childID);
-					
-					
+
+
 					// TODO: check if we improved the current solution?
 					uint64_t reverseLoc;
 					auto loc = opposite.Lookup(hash, reverseLoc);
@@ -269,17 +277,17 @@ void BSStar<state, action, environment, priorityQueue>::Expand(priorityQueue &cu
 			{
 				double g = parentData.g+edgeCost;
 				double h = std::max(heuristic->HCost(succ, target), parentData.h-edgeCost);
-				
+
 				// Ignore nodes that don't have lower f-cost than the incumbant solution
 				if (!fless(g+h, currentCost))
 					break;
-				
+
 				current.AddOpenNode(succ, // This may invalidate our references
 									hash,
 									g,
 									h,
 									nextID);
-				
+
 				// check for solution
 				uint64_t reverseLoc;
 				auto loc = opposite.Lookup(hash, reverseLoc);
@@ -301,7 +309,7 @@ void BSStar<state, action, environment, priorityQueue>::Expand(priorityQueue &cu
 			}
 		}
 	}
-	
+
 	if (foundBetterSolution)
 		Trim();
 }
@@ -345,7 +353,7 @@ void BSStar<state, action, environment, priorityQueue>::Nip(const state &s, prio
 				ExtractPathToStart(middleNode, pFor);
 				reverse(pFor.begin(), pFor.end());
 				std::cout << "Path forward: \n";
-				
+
 				for (auto &s : pFor)
 					std::cout << s << "\n";
 				std::cout << "Path backward: \n";
@@ -385,20 +393,13 @@ void BSStar<state, action, environment, priorityQueue>::Trim()
 template <class state, class action, class environment, class priorityQueue>
 uint64_t BSStar<state, action, environment, priorityQueue>::GetNecessaryExpansions() const
 {
-	uint64_t count = 0;
-	for (unsigned int x = 0; x < forwardQueue.size(); x++)
+	uint64_t necessary = 0;
+	for (const auto &i : counts)
 	{
-		const AStarOpenClosedData<state> &data = forwardQueue.Lookat(x);
-		if ((data.where == kClosedList) && (fless(data.g+data.h, currentCost)))
-			count++;
+		if (i.first.second < currentCost)
+			necessary += i.second;
 	}
-	for (unsigned int x = 0; x < backwardQueue.size(); x++)
-	{
-		const AStarOpenClosedData<state> &data = backwardQueue.Lookat(x);
-		if ((data.where == kClosedList) && (fless(data.g+data.h, currentCost)))
-			count++;
-	}
-	return count;
+	return necessary;
 }
 
 template <class state, class action, class environment, class priorityQueue>

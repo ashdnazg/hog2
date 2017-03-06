@@ -9,6 +9,7 @@
 #include "BidirTOH.h"
 #include "TOH.h"
 #include "TemplateAStar.h"
+#include "BSStar.h"
 #include "NBS.h"
 #include "MM.h"
 
@@ -40,18 +41,22 @@ Heuristic<TOHState<numDisks>> *BuildPDB(const TOHState<numDisks> &goal)
 	return h;
 }
 
+void printCounts(const std::unordered_map<std::pair<double, double>, uint64_t>& counts, float dist)
+{
+	for (const auto &i : counts)
+	{
+		if (i.first.second < dist)
+			printf("%f: %llu\n", i.first.first, i.second);
+	}
+}
+
 template <int N, int pdb1Disks>
 void TestTOH(int first, int last)
 {
-	TemplateAStar<TOHState<N>, TOHMove, TOH<N>> astar;
-	NBS<TOHState<N>, TOHMove, TOH<N>> nbs;
-	MM<TOHState<N>, TOHMove, TOH<N>> mm;
-
 	TOH<N> toh;
 	TOHState<N> s;
 	TOHState<N> g;
 	std::vector<TOHState<N>> thePath;
-	std::vector<TOHMove> actionPath;
 	Heuristic<TOHState<N>> *f;
 	Heuristic<TOHState<N>> *b;
 
@@ -80,8 +85,9 @@ void TestTOH(int first, int last)
 		b = BuildPDB<N, pdb1Disks>(s);
 		printf("Starting heuristics: %f %f\n", f->HCost(s, g), b->HCost(g, s));
 
-		if (1)
+		if (0)
 		{
+			NBS<TOHState<N>, TOHMove, TOH<N>> nbs;
 			printf("-=-=-BDS-=-=-\n");
 			timer.StartTimer();
 			nbs.GetPath(&toh, s, g, f, b, thePath);
@@ -89,19 +95,35 @@ void TestTOH(int first, int last)
 			printf("I%d-%d-%d\t%d\t", N, pdb1Disks, count, (int)toh.GetPathLength(thePath));
 			printf("%llu nodes\t%llu necessary\t", nbs.GetNodesExpanded(), nbs.GetNecessaryExpansions());
 			printf("%1.2fs elapsed\n", timer.GetElapsedTime());
+			printCounts(nbs.GetCounts(), toh.GetPathLength(thePath));
 		}
 		if (1)
 		{
+			MM<TOHState<N>, TOHMove, TOH<N>> mm;
 			printf("-=-=-MM-=-=-\n");
 			timer.StartTimer();
 			mm.GetPath(&toh, s, g, f, b, thePath);
 			timer.EndTimer();
 			printf("I%d-%d-%d\t%d\t", N, pdb1Disks, count, (int)toh.GetPathLength(thePath));
-			printf("%llu nodes\t", mm.GetNodesExpanded());
+			printf("%llu nodes\t%llu necessary\t", mm.GetNodesExpanded(), mm.GetNecessaryExpansions());
 			printf("%1.2fs elapsed\n", timer.GetElapsedTime());
+			printCounts(mm.GetCounts(), toh.GetPathLength(thePath));
 		}
-		if (1)
+		if (0)
 		{
+			BSStar<TOHState<N>, TOHMove, TOH<N>> bs;
+			printf("-=-=-BS*-=-=-\n");
+			timer.StartTimer();
+			bs.GetPath(&toh, s, g, f, b, thePath);
+			timer.EndTimer();
+			printf("I%d-%d-%d\t%d\t", N, pdb1Disks, count, (int)toh.GetPathLength(thePath));
+			printf("%llu nodes\t%llu necessary\t", bs.GetNodesExpanded(), bs.GetNecessaryExpansions());
+			printf("%1.2fs elapsed\n", timer.GetElapsedTime());
+			printCounts(bs.GetCounts(), toh.GetPathLength(thePath));
+		}
+		if (0)
+		{
+			TemplateAStar<TOHState<N>, TOHMove, TOH<N>> astar;
 			printf("-=-=-A*-=-=-\n");
 			astar.SetHeuristic(f);
 			timer.StartTimer();
@@ -110,9 +132,11 @@ void TestTOH(int first, int last)
 			printf("I%d-%d-%d\t%d\t", N, pdb1Disks, count, (int)toh.GetPathLength(thePath));
 			printf("%llu nodes\t%llu necessary\t", astar.GetNodesExpanded(), astar.GetNecessaryExpansions());
 			printf("%1.2fs elapsed\n", timer.GetElapsedTime());
+			printCounts(astar.GetCounts(), toh.GetPathLength(thePath));
 		}
-		if (1)
+		if (0)
 		{
+			TemplateAStar<TOHState<N>, TOHMove, TOH<N>> astar;
 			printf("-=-=-A* (reverse)-=-=-\n");
 			astar.SetHeuristic(b);
 			timer.StartTimer();
@@ -121,6 +145,7 @@ void TestTOH(int first, int last)
 			printf("I%d-%d-%d\t%d\t", N, pdb1Disks, count, (int)toh.GetPathLength(thePath));
 			printf("%llu nodes\t%llu necessary\t", astar.GetNodesExpanded(), astar.GetNecessaryExpansions());
 			printf("%1.2fs elapsed\n", timer.GetElapsedTime());
+			printCounts(astar.GetCounts(), toh.GetPathLength(thePath));
 		}
 		while (b->heuristics.size() > 0)
 		{
