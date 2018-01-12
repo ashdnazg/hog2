@@ -9,6 +9,7 @@
 #include "BidirSTP.h"
 #include "MNPuzzle.h"
 #include "NBS.h"
+#include "CBBS.h"
 #include "IDAStar.h"
 #include "MM.h"
 #include "BSStar.h"
@@ -131,6 +132,7 @@ MNPuzzleState<4, 4> GetKorfInstance(int which)
 void TestSTP(int algorithm)
 {
 	NBS<MNPuzzleState<4, 4>, slideDir, MNPuzzle<4,4>> nbs;
+	CBBS<MNPuzzleState<4, 4>, slideDir, MNPuzzle<4,4>> cbbs;
 	MM<MNPuzzleState<4, 4>, slideDir, MNPuzzle<4,4>> mm;
 	BSStar<MNPuzzleState<4, 4>, slideDir, MNPuzzle<4,4>> bs;
 	TemplateAStar<MNPuzzleState<4, 4>, slideDir, MNPuzzle<4,4>> astar;
@@ -143,8 +145,9 @@ void TestSTP(int algorithm)
 		printf("Problem %d of %d\n", x+1, 100);
 		
 		std::vector<MNPuzzleState<4,4>> nbsPath;
+		std::vector<MNPuzzleState<4,4>> cbbsPath;
 		std::vector<MNPuzzleState<4,4>> astarPath;
-		Timer t1, t2;
+		Timer t1, t2,t3;
 		
 		
 		if (algorithm == 0) // A*
@@ -198,6 +201,17 @@ void TestSTP(int algorithm)
 			printf("MM found path length %1.0f; %llu expanded; %llu necessary; %llu generated; %1.2fs elapsed\n", mnp.GetPathLength(nbsPath),
 				   mm.GetNodesExpanded(), mm.GetNecessaryExpansions(), mm.GetNodesTouched(), t2.GetElapsedTime());
 		}
+		if (algorithm == 5) // cbbs
+		{
+			ZeroHeuristic<MNPuzzleState<4,4>> z;
+			goal.Reset();
+			start = GetKorfInstance(x);
+			t2.StartTimer();
+			cbbs.GetPath(&mnp, start, goal, &z, &z, cbbsPath);
+			t2.EndTimer();
+			printf("MM found path length %1.0f; %llu expanded; %llu necessary; %llu generated; %1.2fs elapsed\n", mnp.GetPathLength(cbbsPath),
+				   cbbs.GetNodesExpanded(), cbbs.GetNecessaryExpansions(), cbbs.GetNodesTouched(), t2.GetElapsedTime());
+		}
 		
 //		
 //		std::cout << astar.GetNodesExpanded() << "\t" << nbs.GetNodesExpanded() << "\t";
@@ -210,6 +224,7 @@ void TestSTP(int algorithm)
 void TestSTPFull()
 {
 	NBS<MNPuzzleState<4, 4>, slideDir, MNPuzzle<4,4>> nbs;
+	CBBS<MNPuzzleState<4, 4>, slideDir, MNPuzzle<4,4>> cbbs;
 	MM<MNPuzzleState<4, 4>, slideDir, MNPuzzle<4,4>> mm;
 	MNPuzzle<4,4> mnp;
 	IDAStar<MNPuzzleState<4,4>, slideDir> ida;
@@ -222,10 +237,11 @@ void TestSTPFull()
 		printf("Problem %d of %d\n", x+1, 100);
 		
 		std::vector<slideDir> idaPath;
+		std::vector<MNPuzzleState<4,4>> cbbsPath;
 		std::vector<MNPuzzleState<4,4>> nbsPath;
 		std::vector<MNPuzzleState<4,4>> astarPath;
 		std::vector<MNPuzzleState<4,4>> mmPath;
-		Timer t1, t2, t3, t4;
+		Timer t1, t2, t3, t4,t5;
 		
 		goal.Reset();
 		start = GetKorfInstance(x);
@@ -247,6 +263,13 @@ void TestSTPFull()
 		nbs.GetPath(&mnp, start, goal, &mnp, &mnp, nbsPath);
 		t3.EndTimer();
 		printf("NBS found path length %ld; %llu expanded; %1.2fs elapsed\n", nbsPath.size()-1,  nbs.GetNodesExpanded(), t3.GetElapsedTime());
+		
+		goal.Reset();
+		start = GetKorfInstance(x);
+		t5.StartTimer();
+		cbbs.GetPath(&mnp, start, goal, &mnp, &mnp, cbbsPath);
+		t5.EndTimer();
+		printf("CBBS found path length %ld; %llu expanded; %1.2fs elapsed\n", cbbsPath.size()-1,  cbbs.GetNodesExpanded(), t5.GetElapsedTime());
 
 		goal.Reset();
 		start = GetKorfInstance(x);

@@ -314,6 +314,11 @@ int MyCLHandler(char *argument[], int maxNumArgs)
 		TestPancake();
 		return 1;
 	}
+	//else if (strcmp(argument[0], "-stpf") == 0)
+	//{
+	//	TestSTPFull();
+	//	return 1;
+	//}
 	else if (strcmp(argument[0], "-toh") == 0)
 	{
 		TOHTest();
