@@ -10,7 +10,9 @@
 #include "TOH.h"
 #include "TemplateAStar.h"
 #include "NBS.h"
+#include "CBBS.h"
 #include "MM.h"
+//#include "BSStar.h"
 
 template <int numDisks, int pdb1Disks, int pdb2Disks = numDisks-pdb1Disks>
 Heuristic<TOHState<numDisks>> *BuildPDB(const TOHState<numDisks> &goal)
@@ -45,7 +47,10 @@ void TestTOH(int first, int last)
 {
 	TemplateAStar<TOHState<N>, TOHMove, TOH<N>> astar;
 	NBS<TOHState<N>, TOHMove, TOH<N>> nbs;
+	CBBS<TOHState<N>, TOHMove, TOH<N>> cbbs;
+	//BS<TOHState<N>, TOHMove, TOH<N>> bs;
 	MM<TOHState<N>, TOHMove, TOH<N>> mm;
+
 
 	TOH<N> toh;
 	TOHState<N> s;
@@ -62,7 +67,7 @@ void TestTOH(int first, int last)
 	int table2[] = {145008714,165971878,154717942,218927374,182772845,5808407,19155194,137438954,13143598,124513215,132635260,39667704,2462244,41006424,214146208,54305743};
 	for (int count = first; count < last; count++)
 	{
-		printf("Seed: %d\n", table[count&0xF]^table2[(count>>4)&0xF]);
+		//printf("Seed: %d\n", table[count&0xF]^table2[(count>>4)&0xF]);
 		srandom(table[count&0xF]^table2[(count>>4)&0xF]);
 
 		s.counts[0] = s.counts[1] = s.counts[2] = s.counts[3] = 0;
@@ -78,37 +83,59 @@ void TestTOH(int first, int last)
 		Timer timer;
 	
 		b = BuildPDB<N, pdb1Disks>(s);
-		printf("Starting heuristics: %f %f\n", f->HCost(s, g), b->HCost(g, s));
+		//printf("Starting heuristics: %f %f\n", f->HCost(s, g), b->HCost(g, s));
 		
 		if (1)
 		{
-			printf("-=-=-BDS-=-=-\n");
+			//printf("-=-=-NBS-=-=-\n");
 			timer.StartTimer();
 			nbs.GetPath(&toh, s, g, f, b, thePath);
 			timer.EndTimer();
-			printf("I%d-%d-%d\t%d\t", N, pdb1Disks, count, (int)toh.GetPathLength(thePath));
-			printf("%llu nodes\t%llu necessary\t", nbs.GetNodesExpanded(), nbs.GetNecessaryExpansions());
+			//printf("I%d-%d-%d\t%d\t", N, pdb1Disks, count, (int)toh.GetPathLength(thePath));
+			printf("NBS %llu nodes %llu necessary ", nbs.GetNodesExpanded(), nbs.GetNecessaryExpansions());
+			printf("%1.2fs elapsed\n", timer.GetElapsedTime());
+		}
+		/*
+		if (1)
+		{
+			//printf("-=-=-BS-=-=-\n");
+			timer.StartTimer();
+			bs.GetPath(&toh, s, g, f, b, thePath);
+			timer.EndTimer();
+			//printf("I%d-%d-%d\t%d\t", N, pdb1Disks, count, (int)toh.GetPathLength(thePath));
+			printf("BS %llu nodes %llu necessary ", bs.GetNodesExpanded(), bs.GetNecessaryExpansions());
+			printf("%1.2fs elapsed\n", timer.GetElapsedTime());
+		}
+		*/
+		if (1)
+		{
+			//printf("-=-=-CBBS-=-=-\n");
+			timer.StartTimer();
+			cbbs.GetPath(&toh, s, g, f, b, thePath);
+			timer.EndTimer();
+			//printf("I%d-%d-%d\t%d\t", N, pdb1Disks, count, (int)toh.GetPathLength(thePath));
+			printf("CBBS %llu nodes %llu necessary ", cbbs.GetNodesExpanded(), cbbs.GetNecessaryExpansions());
 			printf("%1.2fs elapsed\n", timer.GetElapsedTime());
 		}
 		if (1)
 		{
-			printf("-=-=-MM-=-=-\n");
+			//printf("-=-=-MM-=-=-\n");
 			timer.StartTimer();
 			mm.GetPath(&toh, s, g, f, b, thePath);
 			timer.EndTimer();
-			printf("I%d-%d-%d\t%d\t", N, pdb1Disks, count, (int)toh.GetPathLength(thePath));
-			printf("%llu nodes\t", mm.GetNodesExpanded());
+			//printf("I%d-%d-%d\t%d\t", N, pdb1Disks, count, (int)toh.GetPathLength(thePath));
+			printf("%MM %llu nodes %llu necessary", mm.GetNodesExpanded(),mm.GetNecessaryExpansions());
 			printf("%1.2fs elapsed\n", timer.GetElapsedTime());
 		}
 		if (1)
 		{
-			printf("-=-=-A*-=-=-\n");
+			//printf("-=-=-A*-=-=-\n");
 			astar.SetHeuristic(f);
 			timer.StartTimer();
 			astar.GetPath(&toh, s, g, thePath);
 			timer.EndTimer();
-			printf("I%d-%d-%d\t%d\t", N, pdb1Disks, count, (int)toh.GetPathLength(thePath));
-			printf("%llu nodes\t%llu necessary\t", astar.GetNodesExpanded(), astar.GetNecessaryExpansions());
+			//printf("I%d-%d-%d\t%d\t", N, pdb1Disks, count, (int)toh.GetPathLength(thePath));
+			printf("A* %llu nodes %llu necessary", astar.GetNodesExpanded(), astar.GetNecessaryExpansions());
 			printf("%1.2fs elapsed\n", timer.GetElapsedTime());
 		}
 		while (b->heuristics.size() > 0)
